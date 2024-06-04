@@ -45,8 +45,14 @@ def insert_song(song):
     pass
     # songs.update_one(song, {$push: {colors: song.colors} }, {upsert: true})
 
-def insert_color(color):
-    pass
+def insert_color(colors):
+    current_song = get_song()
+    song = songs.find_one({"name": current_song["name"]})
+    if song == None:
+        current_song["colors"] = colors
+        songs.insert_one(current_song)
+    else:
+        songs.update_one({"name": current_song["name"]}, { "$push": {"colors": colors}} )
 
 def get_song_colors(song_name):
     colors = songs.find({"name": song_name}, {"colors": 1})
@@ -62,7 +68,7 @@ def get_song():
         [artist.pop(key) for key in ARTISTS_ENTRIES_TO_REMOVE]
     return song
 
-print(get_song())
+insert_color(["light blue"])
 
 
 
