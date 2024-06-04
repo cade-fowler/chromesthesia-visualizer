@@ -1,0 +1,34 @@
+{
+  "album": {
+    "album_type": "album",
+    "external_urls": {
+      "spotify": "https://open.spotify.com/album/4poxm3vY9nKdqcyeWv5h0a"
+    },
+    "name": "Heiress",
+    "release_date": "2017-11-10"
+  },
+  "artists": [
+    {
+      "external_urls": {
+        "spotify": "https://open.spotify.com/artist/0rZp7G3gIH6WkyeXbrZnGi"
+      },
+      "id": "0rZp7G3gIH6WkyeXbrZnGi",
+      "name": "Novo Amor",
+      "type": "artist"
+    },
+    {
+      "external_urls": {
+        "spotify": "https://open.spotify.com/artist/7FW2qwsY0zLV9GppWatQ5P"
+      },
+      "id": "7FW2qwsY0zLV9GppWatQ5P",
+      "name": "Lowswimmer",
+      "type": "artist"
+    }
+  ],
+  "external_urls": {
+    "spotify": "https://open.spotify.com/track/1XZPtZVqcOzzxbYIR7MjQw"
+  },
+  "id": "1XZPtZVqcOzzxbYIR7MjQw",
+  "name": "Ontario",
+  "popularity": 68
+}
