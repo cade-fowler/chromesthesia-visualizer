@@ -1,0 +1,23 @@
+@import '../../assets/variables';
+
+.container {
+    height: 100%;
+    width: inherit;
+    display: flex;
+    flex-flow: row;
+    margin: 0;
+    justify-content: space-evenly;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .box {
+        flex: 1 0 auto;
+        height: 100%;
+        min-width: 538px;
+    }
+
+    @media (max-width: 1074px) {
+        width: 100%;
+        max-height: 50%;
+    }
+}

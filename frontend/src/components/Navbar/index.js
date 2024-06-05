@@ -1,17 +1,23 @@
 import './index.scss'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faEyeDropper } from '@fortawesome/free-solid-svg-icons'
 
 const Navbar = () => (
     <div className="nav-bar">
-        <NavLink exact='true' activeclassname='active' to='/' className='color-picker-link'>  
-            <FontAwesomeIcon icon={faEyeDropper} color='#4d4d4e'/>
-        </NavLink>
-        <NavLink exact='true' activeclassname='active' to='/databaseexplorer' className='database-explorer-link'>  
-            <FontAwesomeIcon icon={faMagnifyingGlass} color='#4d4d4e'/>
-        </NavLink>
+        <Link className='logo' to='/'>
+            Chromesthesia Visualizer
+        </Link>
+        <nav>
+            <NavLink exact='true' activeclassname='active' to='/' className='color-picker-link'>  
+                <FontAwesomeIcon icon={faEyeDropper} color='#d3cfc4'/>
+            </NavLink>
+            <NavLink exact='true' activeclassname='active' to='/databaseexplorer' className='database-explorer-link'>  
+                <FontAwesomeIcon icon={faMagnifyingGlass} color='#d3cfc4'/>
+            </NavLink>
+        </nav>
     </div>
 )
+
 
 export default Navbar

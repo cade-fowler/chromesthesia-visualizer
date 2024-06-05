@@ -1,0 +1,22 @@
+@import '../../../assets/variables';
+
+.spotify-player {
+    background-color: orange;
+    height: 100%;
+    width: 100%;
+
+    .react-colorful {
+        width: 90%;
+        height: 80%;
+        padding: 5%;
+        padding-bottom: 0;
+    }
+
+    input {
+        width: 90%;
+        text-align: center;
+        border: none;
+        margin-left: 5%;
+        font-size: 16px;
+    }
+}
