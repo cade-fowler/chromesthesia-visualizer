@@ -4,7 +4,6 @@ import axios from 'axios'
 import { useSearchParams } from 'react-router-dom'
 
 const SpotifyElement = () => {
-    const CLIENT_ID = "REDACTED"
     const REDIRECT_URI = "http://localhost:3000"
     const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
     const RESPONSE_TYPE = "code"
