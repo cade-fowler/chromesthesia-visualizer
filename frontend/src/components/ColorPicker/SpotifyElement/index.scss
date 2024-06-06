@@ -1,22 +1,99 @@
 @import '../../../assets/variables';
 
-.spotify-player {
-    background-color: orange;
-    height: 100%;
-    width: 100%;
+.spotify {
+    background-color: #1b202c;
+    height: auto;
+    width: 90%;
+    height: 95%;
+    padding: 5%;
+    margin-bottom: 5%;
 
-    .react-colorful {
-        width: 90%;
-        height: 80%;
-        padding: 5%;
-        padding-bottom: 0;
-    }
+    .login-out {
+        float: right;
 
-    input {
-        width: 90%;
-        text-align: center;
-        border: none;
-        margin-left: 5%;
-        font-size: 16px;
+        button, a {
+            border: $medium-color solid 3px;
+            border-radius: 5px;
+            background: none;
+            color: $medium-color;
+            font-size: 1rem;
+            padding: 8%;
+
+            :hover {
+                background-color: $medium-color;
+                color: $dark-color;
+            } // TODO not working
+        }
     }
 }
+
+.player {
+    font-family: 'Helvetica Neue';
+    max-width: 90%;
+    margin-left: 5%;
+
+    .status {
+        display: flex;
+        
+        .logo {
+            font-size: 4rem;
+            padding: 2%;
+        }
+
+        .status-text {
+            color: $light-color;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+            padding: 5%;
+            padding-left: 0;
+        }
+    }
+
+    .song-box {
+        border: $medium-color solid 3px;
+        border-radius: 15px;
+        display: flex;
+
+        .album-art {
+            width: 25%;
+            height: auto;
+            padding: 5%;
+            border-radius: 18%;
+        }
+
+        .song-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            width: 100%;
+            padding-top: 8%;
+            padding-bottom: 8%;
+
+            .top-line {
+                display: flex;
+                width: auto;
+                font-size: 2rem;
+
+                .playing-animation {
+                    
+                }
+        
+                .song-name {
+                    text-decoration: none;
+                    color: $light-color;
+                    padding-left: 5%;
+                    font-weight: bold;
+                }
+            }
+            
+            .artist-name {
+                font-size: 1.5rem;
+                margin: 0;
+                color: $medium-color;
+            }
+        }        
+    }
+}
+
+// sparks 2:20 

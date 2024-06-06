@@ -1,7 +1,7 @@
 import './index.scss'
-import { useEffect, useState } from 'react';
-import axios from 'axios'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import SpotifyNowPlaying from './SpotifyNowPlaying'
 
 const SpotifyElement = () => {
     const REDIRECT_URI = "http://localhost:3000"
@@ -10,7 +10,6 @@ const SpotifyElement = () => {
     const SCOPE = "user-read-currently-playing user-top-read"
 
     const [code, setCode] = useState("")
-
     
     const [queryParameters] = useSearchParams()
 
@@ -33,26 +32,17 @@ const SpotifyElement = () => {
         window.localStorage.removeItem("code")
     }
 
-    const requestAccessToken =  async () => {
-        const { data } = await axios.post("https://accounts.spotify.com/api/token", {
-            headers: {
-                Authorization: `Bearer `,
-                Content_Type: "application/x-www-form-urlencoded"
-            },
-            params: {
-                grant_type: "authorization_code",
-                code: `${window.localStorage.getItem("code")}`,
-                redirect_uri: `${REDIRECT_URI}`
-            }
-        })
-    }
+    console.log(process.env)
 
     return (
         <div  className='spotify'>
-            {!code ? 
-                <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}>Login to Spotify</a>
-                : <button onClick={logout}>Logout</button>
-            }
+            <div className="login-out">
+                {!code ? 
+                    <a href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}>Login</a>
+                    : <button onClick={logout}>Logout</button>
+                }
+            </div>
+            <SpotifyNowPlaying />
         </div>
     )
 }

@@ -42,7 +42,7 @@
             }
             
             &:hover {
-                color: $accent-color;
+                color: $spotify-color;
     
                 svg {
                     opacity: 0;
@@ -82,7 +82,7 @@
     
         a.active {
             svg {
-                color: $accent-color;
+                color: $spotify-color;
             }
         }
     }
