@@ -36,12 +36,12 @@ const SpotifyElement = () => {
 
     return (
         <div  className='spotify'>
-            <div className="login-out">
+            {/* <div className="login-out">
                 {!code ? 
                     <a href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}>Login</a>
                     : <button onClick={logout}>Logout</button>
                 }
-            </div>
+            </div> */}
             <SpotifyNowPlaying />
         </div>
     )

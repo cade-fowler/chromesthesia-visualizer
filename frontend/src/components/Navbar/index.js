@@ -10,10 +10,10 @@ const Navbar = () => (
         </Link>
         <nav>
             <NavLink exact='true' activeclassname='active' to='/' className='color-picker-link'>  
-                <FontAwesomeIcon icon={faEyeDropper} color='#d3cfc4'/>
+                <FontAwesomeIcon icon={faEyeDropper} color='#6b7a85'/>
             </NavLink>
             <NavLink exact='true' activeclassname='active' to='/databaseexplorer' className='database-explorer-link'>  
-                <FontAwesomeIcon icon={faMagnifyingGlass} color='#d3cfc4'/>
+                <FontAwesomeIcon icon={faMagnifyingGlass} color='#6b7a85'/>
             </NavLink>
         </nav>
     </div>
