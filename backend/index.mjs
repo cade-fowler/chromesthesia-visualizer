@@ -16,7 +16,7 @@ app.use("/songs", songs);
 // Global error handling
 app.use((err, _req, res, next) => {
     console.log(err);
-    res.status(500).send(err)
+    res.status(500).send("Uh oh. An error occured.")
 })
 
 // start the Express server
