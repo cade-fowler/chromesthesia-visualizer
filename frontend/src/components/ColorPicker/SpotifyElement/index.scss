@@ -79,13 +79,12 @@
                 padding-right: 5%;
 
                 .playing-animation {
-                    
+                    padding-right: 5%;
                 }
         
                 .song-name {
                     text-decoration: none;
                     color: $light-color;
-                    padding-left: 5%;
                     font-weight: bold;
                     flex-grow: 1;
                 }
@@ -97,6 +96,19 @@
                 color: $medium-color;
             }
         }        
+    }
+}
+
+.swatch-box {
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+    padding-top: 3%;
+    // border: 1px solid orange;
+
+    .swatch {
+        flex-grow: 1;
+        min-height: 100px;
     }
 }
 

@@ -11,19 +11,20 @@ const SpotifyNowPlaying = (props) => {
   const [result, setResult] = useState({});
 
   useEffect(() => {
-    Promise.all([
-      getNowPlayingItem(
-        props.client_id,
-        props.client_secret,
-        props.refresh_token
-      ),
-    ]).then((results) => {
-      setResult(results[0]);
-      setLoading(false);
-    });
+    // const spotifyTimeout = setTimeout(() => {
+        Promise.all([
+            getNowPlayingItem(
+              props.client_id,
+              props.client_secret,
+              props.refresh_token
+            ),
+          ]).then((results) => {
+            setResult(results[0]);
+            setLoading(false);
+          });
+    // }, 3000);
   });
 
-  console.log(result.songUrl)
   return (
     <div className="player">
         <div className="status">
@@ -32,23 +33,24 @@ const SpotifyNowPlaying = (props) => {
             </div>
             <p className="status-text">{result.isPlaying ? 'Now playing' : "Currently offline"}</p>
         </div>
-        {result.isPlaying && 
-            <div className="song-box"> 
-                <img className="album-art"
-                    alt={`${result.title} album art`}
-                    src={result.albumImageUrl}
-                />
-                <div className="song-info">
-                    <div className="top-line">
-                        <div className="playing-animation">
-                            <PlayingAnimation />
-                        </div>
-                        <a className="song-name" href={result.songUrl} target="_blank">{result.title}</a> {/* TODO fix this */}
-                    </div>
-                   <p className="artist-name">{result.artist}</p>
+        <div className="song-box"> 
+            <img className="album-art"
+                alt={`${result.title} album art`}
+                src={result.albumImageUrl}
+            />
+            <div className="song-info">
+                <div className="top-line">
+                    <PlayingAnimation isPlaying={result.isPlaying}/>
+                    <a className="song-name" href={result.songUrl} target="_blank" rel="noopener noreferrer">{result.title}</a> {/* TODO fix this */}
                 </div>
+                <p className="artist-name">{result.artist}</p>
             </div>
-        }
+        </div>
+        <div className="swatch-box">
+            {props.colors.map(color => (
+                <div className="swatch" style={{'background': color}} key={color}>{color}</div> //TODO fix key when duplicate colors
+            ))}
+        </div>
     </div>
   )
 };

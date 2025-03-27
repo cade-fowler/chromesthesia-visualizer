@@ -1,13 +1,20 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
-const PlayingAnimation = () => {
+const PlayingAnimation = (props) => {
     return(
-        <Playing>
-            <span />
-            <span />
-            <span />
-        </Playing>
+        <>
+            {props.isPlaying && 
+                <div className="playing-animation">
+                    <Playing>
+                        <span />
+                        <span />
+                        <span />
+                    </Playing>  
+                </div>
+                
+            }
+        </>
     )
 };
 
