@@ -5,3 +5,4 @@ frontend/src/.env.test.local
 frontend/src/.env.production.local
 
 .DS_Store
+frontend/.env
