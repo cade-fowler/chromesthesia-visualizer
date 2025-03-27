@@ -3,6 +3,7 @@ import { Buffer } from 'buffer'
 
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
+const USER_ENDPOINT = `https://api.spotify.com/v1/me`
 const client_id = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
 const client_secret = process.env.REACT_APP_SPOTIFY_CLIENT_SECRET;
 const refresh_token = process.env.REACT_APP_SPOTIFY_REFRESH_TOKEN;
@@ -20,9 +21,29 @@ const getAccessToken = async () => {
             grant_type: "refresh_token",
             refresh_token,
         }),
-    })
+    }).catch(err => console.log(err))
     
     return response.json()
+}
+
+export const getUsername = async  (client_id, client_secret, refresh_token) => {
+    const { access_token } = await getAccessToken(
+        client_id,
+        client_secret,
+        refresh_token
+    )
+    const response = await fetch(USER_ENDPOINT, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    }).catch(err => console.log(err))
+
+    if (response.status === 204 || response.status > 400) {
+        return false
+    }
+
+    const user = await response.json()
+    return user.display_name
 }
 
 export const getNowPlaying = async (client_id, client_secret, refresh_token) => {
@@ -43,8 +64,8 @@ export default async function getNowPlayingItem(
     client_secret,
     refresh_token
 ) {
-    const response = await getNowPlaying(client_id, client_secret, refresh_token)
-    if (response.status === 204 || response.status > 400) {
+    const response = await getNowPlaying(client_id, client_secret, refresh_token).catch(err => console.log(err))
+    if (response === undefined || response.status === 204 || response.status > 400) {
         return false
     }
     const song = await response.json()

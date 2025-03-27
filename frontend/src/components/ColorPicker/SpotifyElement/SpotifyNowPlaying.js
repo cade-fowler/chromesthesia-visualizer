@@ -11,7 +11,7 @@ const SpotifyNowPlaying = (props) => {
   const [result, setResult] = useState({});
 
   useEffect(() => {
-    // const spotifyTimeout = setTimeout(() => {
+    const spotifyTimeout = setTimeout(() => {
         Promise.all([
             getNowPlayingItem(
               props.client_id,
@@ -22,7 +22,7 @@ const SpotifyNowPlaying = (props) => {
             setResult(results[0]);
             setLoading(false);
           });
-    // }, 3000);
+    }, 5000);
   });
 
   return (
