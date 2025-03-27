@@ -43,7 +43,7 @@ const SpotifyNowPlaying = (props) => {
                         <div className="playing-animation">
                             <PlayingAnimation />
                         </div>
-                        <a className="song-name" href={result.songUrl} target="_blank">{result.title}</a> 
+                        <a className="song-name" href={result.songUrl} target="_blank">{result.title}</a> {/* TODO fix this */}
                     </div>
                    <p className="artist-name">{result.artist}</p>
                 </div>

@@ -17,10 +17,15 @@ const ColorPickerElement = () => {
         color: isDark(color) ? "#f5f5f5" : "#1c1c1c"
     }
 
+    const saveColor = () => {
+
+    }
+
     return (
         <div style={style} className='color-picker'>
             <HexColorPicker color={color} onChange={setColor} />
             <HexColorInput color={color} onChange={setColor} style={style} prefixed='true'/>
+            <button onClick={saveColor}>Save</button>
         </div>
     )
 }
