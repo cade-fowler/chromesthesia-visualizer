@@ -47,9 +47,15 @@ const SpotifyNowPlaying = (props) => {
             </div>
         </div>
         <div className="swatch-box">
-            {props.colors.map(color => (
-                <div className="swatch" style={{'background': color}} key={color}>{color}</div> //TODO fix key when duplicate colors
-            ))}
+            { Array.isArray(props.colors) ? 
+                props.colors.map(color => (
+                    <div className="swatch" style={{'background': color}} key={color}>{color}</div> //TODO fix key when duplicate colors
+                )) 
+                : ( <div>No Colors</div> )
+            }
+        </div>
+        <div>
+            <button>Save</button>
         </div>
     </div>
   )

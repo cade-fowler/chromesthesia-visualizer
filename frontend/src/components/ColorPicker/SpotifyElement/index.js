@@ -23,7 +23,7 @@ const SpotifyElement = (props) => {
         ]).then((results) => {
         setUsername(results[0]);
         });
-    });
+    }, [props.client_id, props.client_secret, props.refresh_token]);
     
     const [queryParameters] = useSearchParams()
 

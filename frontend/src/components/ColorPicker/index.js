@@ -2,6 +2,7 @@ import './index.scss'
 import ColorPickerElement from './ColorPickerElement'
 import SpotifyElement from './SpotifyElement'
 import { useState, useEffect } from 'react'
+import { getColors } from '../databaseAPI'
 
 const ColorPicker = () => {
     // const saveColor = (color) => {
@@ -12,13 +13,12 @@ const ColorPicker = () => {
     const [colors, setColors] = useState([]);
 
     useEffect(() => {
-        fetch('http://localhost:5050/songs/665ec2b315dc2b43dccdc176/colors')
-          .then(res => res.json())
-          .then(json => setColors(json))
-          .catch(err => console.error(err));
+        Promise.all([getColors()])
+            .then((results) => {
+                setColors(results[0]);
+            }
+        );
     }, []);
-
-    const handleColorChange = (value) => setCurrentColor(value);
 
     return (
         <div className='container'>
@@ -28,7 +28,7 @@ const ColorPicker = () => {
             <div className="box">
                 <ColorPickerElement
                     color={currentColor}
-                    onColorChange={handleColorChange}    
+                    onColorChange={setCurrentColor}    
                 />
             </div>
             {/* <div>{currentColor}</div> */}
