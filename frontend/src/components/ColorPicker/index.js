@@ -11,14 +11,15 @@ const ColorPicker = () => {
 
     const [currentColor, setCurrentColor] = useState('');
     const [colors, setColors] = useState([]);
+    const [songId, setSongId] = useState('0d28khcov6AiegSCpG5TuT');
 
     useEffect(() => {
-        Promise.all([getColors()])
+        Promise.all([getColors(songId)])
             .then((results) => {
                 setColors(results[0]);
             }
         );
-    }, []);
+    }, [songId]);
 
     return (
         <div className='container'>

@@ -8,7 +8,7 @@ import './index.scss'
 
 const SpotifyNowPlaying = (props) => {
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState({});
+  const [song, setSong] = useState({});
 
   useEffect(() => {
     const spotifyTimeout = setTimeout(() => {
@@ -19,7 +19,7 @@ const SpotifyNowPlaying = (props) => {
               props.refresh_token
             ),
           ]).then((results) => {
-            setResult(results[0]);
+            setSong(results[0]);
             setLoading(false);
           });
     }, 5000);
@@ -31,19 +31,19 @@ const SpotifyNowPlaying = (props) => {
             <div className="logo">
                 <FontAwesomeIcon icon={faSpotify} color='#1ad861'/>
             </div>
-            <p className="status-text">{result.isPlaying ? 'Now playing' : "Currently offline"}</p>
+            <p className="status-text">{song.isPlaying ? 'Now playing' : "Currently offline"}</p>
         </div>
         <div className="song-box"> 
             <img className="album-art"
-                alt={`${result.title} album art`}
-                src={result.albumImageUrl}
+                alt={`${song.title} album art`}
+                src={song.albumImageUrl}
             />
             <div className="song-info">
                 <div className="top-line">
-                    <PlayingAnimation isPlaying={result.isPlaying}/>
-                    <a className="song-name" href={result.songUrl} target="_blank" rel="noopener noreferrer">{result.title}</a> {/* TODO fix this */}
+                    <PlayingAnimation isPlaying={song.isPlaying}/>
+                    <a className="song-name" href={song.songUrl} target="_blank" rel="noopener noreferrer">{song.title}</a> {/* TODO fix this */}
                 </div>
-                <p className="artist-name">{result.artist}</p>
+                <p className="artist-name">{song.artist}</p>
             </div>
         </div>
         <div className="swatch-box">
