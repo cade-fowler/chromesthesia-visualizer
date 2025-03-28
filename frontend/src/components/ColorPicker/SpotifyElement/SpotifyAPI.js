@@ -74,6 +74,7 @@ export default async function getNowPlayingItem(
     const isPlaying = song.is_playing
     const songUrl = song.item.external_urls.spotify
     const title = song.item.name
+    const id = song.item.id
     
     return {
         albumImageUrl,
@@ -81,5 +82,6 @@ export default async function getNowPlayingItem(
         isPlaying,
         songUrl,
         title,
+        id
     }
 }

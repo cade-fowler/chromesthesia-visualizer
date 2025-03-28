@@ -21,7 +21,7 @@ const SpotifyElement = (props) => {
                 props.refresh_token
             ),
         ]).then((results) => {
-        setUsername(results[0]);
+            setUsername(results[0]);
         });
     }, [props.client_id, props.client_secret, props.refresh_token]);
     
@@ -56,7 +56,7 @@ const SpotifyElement = (props) => {
                     : <button onClick={logout}>Logout</button>
                 }
             </div>
-            <SpotifyNowPlaying colors={props.colors}/>
+            <SpotifyNowPlaying/>
         </div>
     )
 }

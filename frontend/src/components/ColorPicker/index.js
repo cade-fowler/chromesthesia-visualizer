@@ -1,8 +1,7 @@
 import './index.scss'
 import ColorPickerElement from './ColorPickerElement'
 import SpotifyElement from './SpotifyElement'
-import { useState, useEffect } from 'react'
-import { getColors } from '../databaseAPI'
+import { useState } from 'react'
 
 const ColorPicker = () => {
     // const saveColor = (color) => {
@@ -10,21 +9,11 @@ const ColorPicker = () => {
     // }
 
     const [currentColor, setCurrentColor] = useState('');
-    const [colors, setColors] = useState([]);
-    const [songId, setSongId] = useState('0d28khcov6AiegSCpG5TuT');
-
-    useEffect(() => {
-        Promise.all([getColors(songId)])
-            .then((results) => {
-                setColors(results[0]);
-            }
-        );
-    }, [songId]);
 
     return (
         <div className='container'>
             <div className="box">
-                <SpotifyElement colors={colors}/>
+                <SpotifyElement/>
             </div>
             <div className="box">
                 <ColorPickerElement

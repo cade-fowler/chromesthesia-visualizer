@@ -44,10 +44,11 @@ router.post("/", async (req, res) => {
 router.get("/:id/colors/", async (req, res) => {
     let query = {id: req.params.id};
     let song = await db.collection("songs").findOne(query);
-    let result = song.colors;
-  
-    if (!result) res.send("Not found").status(404);
-    else res.send(result).status(200);
+    if (!song) {
+        res.send({'message': 'Song not found.'}).status(404);
+    } else {
+        res.send(song.colors).status(200);
+    }
 });
 
 // Get songs 
