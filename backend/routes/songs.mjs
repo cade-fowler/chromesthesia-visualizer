@@ -42,7 +42,7 @@ router.post("/", async (req, res) => {
 
 // Get song colors
 router.get("/:id/colors/", async (req, res) => {
-    let query = {_id: new ObjectId(req.params.id)};
+    let query = {id: req.params.id};
     let song = await db.collection("songs").findOne(query);
     let result = song.colors;
   
