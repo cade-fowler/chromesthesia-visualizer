@@ -1,5 +1,6 @@
 import express from "express";
-import cors from "cors";
+import cors from 'cors';
+import bodyParser from 'body-parser';
 import "./loadEnvironment.mjs";
 import "express-async-errors";
 import songs from "./routes/songs.mjs";
@@ -9,6 +10,12 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded())
+
+// parse application/json
+app.use(bodyParser.json())
 
 // Load the /songs routes
 app.use("/songs", songs);

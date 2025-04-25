@@ -7,13 +7,22 @@ export const getColors = async (id) => {
     return response.json().catch(err => console.error("JSON ERROR"));
 }
 
-export const postSong = async (data) => {
+export const postSong = async (song, color) => {
+    let newSong = song;
+    newSong.color = color
+    newSong.artists = song.artist.split(",")
+    delete newSong.artist
+    delete newSong.isPlaying
     console.log("Posting:")
-    console.log(data)
-    // TODO split multiple artists
+    console.log(JSON.stringify(newSong))
+
     const response = await fetch('http://localhost:5050/songs/', {
         method: "POST",
-        body: JSON.stringify(data)
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newSong)
     }).catch(err => console.error(err))
-    return response.json().catch(err => console.error("JSON ERROR"));
+    console.log(response)
+    return response;
 }
