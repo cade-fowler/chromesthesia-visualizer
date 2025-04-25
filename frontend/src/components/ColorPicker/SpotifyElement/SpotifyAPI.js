@@ -23,7 +23,7 @@ const getAccessToken = async () => {
         }),
     }).catch(err => console.log(err))
     
-    return response.json()
+    return response.json().catch(err => console.log(err))
 }
 
 export const getUsername = async  (client_id, client_secret, refresh_token) => {
@@ -32,6 +32,7 @@ export const getUsername = async  (client_id, client_secret, refresh_token) => {
         client_secret,
         refresh_token
     )
+    // ).catch(err => console.log("Error"))
     const response = await fetch(USER_ENDPOINT, {
         headers: {
             Authorization: `Bearer ${access_token}`,

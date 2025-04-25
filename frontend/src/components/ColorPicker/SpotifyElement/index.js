@@ -56,7 +56,7 @@ const SpotifyElement = (props) => {
                     : <button onClick={logout}>Logout</button>
                 }
             </div>
-            <SpotifyNowPlaying/>
+            <SpotifyNowPlaying color={props.color}/>
         </div>
     )
 }

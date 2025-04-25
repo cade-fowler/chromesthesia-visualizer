@@ -4,7 +4,7 @@ import SpotifyLogo from "./SpotifyLogo";
 import PlayingAnimation from "./PlayingAnimation";
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getColors } from '../../databaseAPI'
+import { getColors, postSong } from '../../databaseAPI'
 import './index.scss'
 
 const SpotifyNowPlaying = (props) => {
@@ -12,11 +12,7 @@ const SpotifyNowPlaying = (props) => {
     const [song, setSong] = useState({});
 
     const [colors, setColors] = useState([]);
-    const [songId, setSongId] = useState('0d28khcov6AiegSCpG5TuT');
-  
-    useEffect(() => {
-        
-    }, [songId]);
+    const [songId, setSongId] = useState('');
 
     useEffect(() => {
         const spotifyTimeout = setTimeout(() => {
@@ -30,6 +26,7 @@ const SpotifyNowPlaying = (props) => {
                 setSong(results[0]);
                 setLoading(false);
                 setSongId(results[0].id);
+                console.log(results[0])
 
                 Promise.all([getColors(songId)])
                     .then((results) => {
@@ -39,6 +36,13 @@ const SpotifyNowPlaying = (props) => {
             }).catch(err => console.log(err));
         }, 5000);
     });
+
+    const onSave = () => {
+        console.log(props.color)
+        let songCopy = song
+        songCopy.color = props.color
+        postSong(songCopy)
+    }
 
     return (
         <div className="player">
@@ -56,7 +60,7 @@ const SpotifyNowPlaying = (props) => {
                 <div className="song-info">
                     <div className="top-line">
                         <PlayingAnimation isPlaying={song.isPlaying}/>
-                        <a className="song-name" href={song.songUrl} target="_blank" rel="noopener noreferrer">{song.title}</a> {/* TODO fix this */}
+                        <a className="song-name" href={song.songUrl} target="_blank" rel="noopener noreferrer">{song.title}</a>
                     </div>
                     <p className="artist-name">{song.artist}</p>
                 </div>
@@ -70,8 +74,12 @@ const SpotifyNowPlaying = (props) => {
                 }
             </div>
             <div>
-                <button>Save</button>
+                <button onClick={onSave}>Save</button>
+                id = {songId}
             </div>
+            {/* <div>
+                {songId}
+            </div> */}
         </div>
     )
 };

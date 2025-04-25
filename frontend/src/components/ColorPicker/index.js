@@ -8,12 +8,12 @@ const ColorPicker = () => {
     //     console.log(color);
     // }
 
-    const [currentColor, setCurrentColor] = useState('');
+    const [currentColor, setCurrentColor] = useState('#FFFFFF');
 
     return (
         <div className='container'>
             <div className="box">
-                <SpotifyElement/>
+                <SpotifyElement color={currentColor}/>
             </div>
             <div className="box">
                 <ColorPickerElement

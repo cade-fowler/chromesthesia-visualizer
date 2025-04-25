@@ -20,8 +20,8 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
     // const query = {id: req.params.id};
 
-    let result = await db.collection("songs").findOne(req.body.id);
-    console.log(req.body.id)
+    let result = await db.collection("songs").findOne({id: req.body.id});
+    console.log(req.body)
   
     if (!result) res.send("Not found").status(404);
     else res.send(result).status(200);
