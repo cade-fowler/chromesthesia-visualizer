@@ -75,7 +75,11 @@ const SpotifyNowPlaying = (props) => {
             </div>
             <div>
                 <button onClick={onSave}>Save</button>
+            </div>
+            <div className="temp">
                 id = {songId}
+                color = {props.color}
+                <div style={{'background': props.color}}>{props.color}</div>
             </div>
             {/* <div>
                 {songId}
