@@ -13,8 +13,6 @@ export const postSong = async (song, color) => {
     newSong.artists = song.artist.split(",")
     delete newSong.artist
     delete newSong.isPlaying
-    console.log("Posting:")
-    console.log(JSON.stringify(newSong))
 
     const response = await fetch('http://localhost:5050/songs/', {
         method: "POST",
@@ -23,6 +21,5 @@ export const postSong = async (song, color) => {
         },
         body: JSON.stringify(newSong)
     }).catch(err => console.error(err))
-    console.log(response)
     return response;
 }
