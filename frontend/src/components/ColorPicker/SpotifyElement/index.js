@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import SpotifyNowPlaying from './SpotifyNowPlaying'
 import { getUsername } from './SpotifyAPI'
+import { postSong } from '../../databaseAPI'
 
 const SpotifyElement = (props) => {
     const REDIRECT_URI = "http://localhost:3000"
@@ -12,6 +13,8 @@ const SpotifyElement = (props) => {
 
     const [code, setCode] = useState("")
     const [username, setUsername] = useState("")
+
+    const [currentSong, setCurrentSong] = useState({id: 0, isPlaying: false})
 
     useEffect(() => {
         Promise.all([
@@ -56,7 +59,18 @@ const SpotifyElement = (props) => {
                     : <button onClick={logout}>Logout</button>
                 }
             </div>
-            <SpotifyNowPlaying color={props.color}/>
+            <SpotifyNowPlaying 
+                song={currentSong}
+                onSongChange={setCurrentSong}
+            />
+            <div className="temp">
+                id = {currentSong ? currentSong.id : "No ID"}
+                color = {props.color}
+                <div style={{'background': props.color}}>{props.color}</div>
+            </div>
+            <div>
+                <button onClick={_ => postSong(currentSong, props.color)}>Save</button>
+            </div>
         </div>
     )
 }

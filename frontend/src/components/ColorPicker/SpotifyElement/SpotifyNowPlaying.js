@@ -4,15 +4,12 @@ import SpotifyLogo from "./SpotifyLogo";
 import PlayingAnimation from "./PlayingAnimation";
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getColors, postSong } from '../../databaseAPI'
+import { getColors } from '../../databaseAPI'
 import './index.scss'
 
 const SpotifyNowPlaying = (props) => {
     const [loading, setLoading] = useState(true);
-    const [song, setSong] = useState({});
-
     const [colors, setColors] = useState([]);
-    const [songId, setSongId] = useState('');
 
     useEffect(() => {
         const spotifyTimeout = setTimeout(() => {
@@ -23,26 +20,19 @@ const SpotifyNowPlaying = (props) => {
                     props.refresh_token
                 ),
             ]).then((results) => {
-                setSong(results[0]);
+                props.onSongChange(results[0]);
                 setLoading(false);
-                setSongId(results[0].id);
-                console.log(results[0])
 
-                Promise.all([getColors(songId)])
-                    .then((results) => {
-                        setColors(results[0]);
-                    }
-                );
+                if (props.song) {
+                    Promise.all([getColors(props.song.id)])
+                        .then((results) => {
+                            setColors(results[0]);
+                        }
+                    );
+                }
             }).catch(err => console.log(err));
         }, 5000);
     });
-
-    const onSave = () => {
-        console.log(props.color)
-        let songCopy = song
-        songCopy.color = props.color
-        postSong(songCopy)
-    }
 
     return (
         <div className="player">
@@ -50,19 +40,19 @@ const SpotifyNowPlaying = (props) => {
                 <div className="logo">
                     <FontAwesomeIcon icon={faSpotify} color='#1ad861'/>
                 </div>
-                <p className="status-text">{song.isPlaying ? 'Now playing' : "Currently offline"}</p>
+                <p className="status-text">{props.song.isPlaying ? 'Now playing' : "Currently offline"}</p>
             </div>
             <div className="song-box"> 
                 <img className="album-art"
-                    alt={`${song.title} album art`}
-                    src={song.albumImageUrl}
+                    alt={`${props.song.title} album art`}
+                    src={props.song.albumImageUrl}
                 />
                 <div className="song-info">
                     <div className="top-line">
-                        <PlayingAnimation isPlaying={song.isPlaying}/>
-                        <a className="song-name" href={song.songUrl} target="_blank" rel="noopener noreferrer">{song.title}</a>
+                        <PlayingAnimation isPlaying={props.song.isPlaying}/>
+                        <a className="song-name" href={props.song.songUrl} target="_blank" rel="noopener noreferrer">{props.song.title}</a>
                     </div>
-                    <p className="artist-name">{song.artist}</p>
+                    <p className="artist-name">{props.song.artist}</p>
                 </div>
             </div>
             <div className="swatch-box">
@@ -73,14 +63,8 @@ const SpotifyNowPlaying = (props) => {
                     : ( <div>No Colors</div> )
                 }
             </div>
-            <div>
-                <button onClick={onSave}>Save</button>
-            </div>
-            <div className="temp">
-                id = {songId}
-                color = {props.color}
-                <div style={{'background': props.color}}>{props.color}</div>
-            </div>
+            
+            
             {/* <div>
                 {songId}
             </div> */}
