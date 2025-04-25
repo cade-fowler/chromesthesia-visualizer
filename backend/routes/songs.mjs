@@ -19,13 +19,37 @@ router.get("/:id", async (req, res) => {
 // Add new song
 router.post("/", async (req, res) => {
     // const query = {id: req.params.id};
-    console.log(req.body)
+    let color = req.body.color
+    let song = req.body
+    delete song.color
+    song.colors = [color]
 
     let result = await db.collection("songs").findOne({id: req.body.id});
-  
-    if (!result) res.send("Not found").status(404);
-    else res.send(result).status(200);
 
+    if (!result) {
+        try {
+            let newSong = await db.collection("songs").insertOne(song)
+            res.send(newSong).status(201);
+        } catch (error) {
+            console.log(error)
+            res.send({"Error": "Unable to add song"}).status(400)
+        }
+        
+    } else {
+        console.log("already in database")
+        
+        try {
+            let r = await db.collection("songs").updateOne(
+                {id: req.body.id},
+                {$addToSet: {colors: color}}
+            )
+            res.send(result).status(201);
+        } catch (error) {
+            console.log(error)
+            res.send({"Error": "Unable to add color"}).status(400)
+        }
+        
+    }
 });
 
 // // Add new colors to song
