@@ -132,13 +132,7 @@ export async function refreshToken() {
 //     return response.json().catch(err => console.log(err))
 // }
 
-export const getUsername = async (client_id, client_secret, refresh_token) => {
-    // const { access_token } = await getAccessToken(
-    //     client_id,
-    //     client_secret,
-    //     refresh_token
-    // )
-    // ).catch(err => console.log("Error"))
+export const getUsername = async () => {
     const response = await fetch(USER_ENDPOINT, {
         headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,

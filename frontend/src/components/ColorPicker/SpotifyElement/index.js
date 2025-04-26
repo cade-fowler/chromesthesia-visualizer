@@ -16,17 +16,13 @@ const SpotifyElement = (props) => {
 
     const [currentSong, setCurrentSong] = useState({id: 0, isPlaying: false})
 
-    // useEffect(() => {
-    //     Promise.all([
-    //         getUsername(
-    //             props.client_id,
-    //             props.client_secret,
-    //             props.refresh_token
-    //         ),
-    //     ]).then((results) => {
-    //         setUsername(results[0]);
-    //     });
-    // }, [props.client_id, props.client_secret, props.refresh_token]);
+    useEffect(() => {
+        Promise.all([
+            getUsername()
+        ]).then((results) => {
+            setUsername(results[0]);
+        });
+    }, [props.client_id, props.client_secret, props.refresh_token]);
 
     useEffect(() => {
         // On page load, try to fetch auth code from current browser search URL
