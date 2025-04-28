@@ -147,12 +147,7 @@ export const getUsername = async () => {
     return user.display_name
 }
 
-export const getNowPlaying = async (client_id, client_secret, refresh_token) => {
-    // const { access_token } = await getAccessToken(
-    //     client_id,
-    //     client_secret,
-    //     refresh_token
-    // )
+export const getNowPlaying = async () => {
     return fetch(NOW_PLAYING_ENDPOINT, {
         headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -160,16 +155,13 @@ export const getNowPlaying = async (client_id, client_secret, refresh_token) => 
     })
 }
 
-export default async function getNowPlayingItem(
-    client_id,
-    client_secret,
-    refresh_token
-) {
-    const response = await getNowPlaying(client_id, client_secret, refresh_token).catch(err => console.log(err))
+export const getNowPlayingItem = async () => {
+    const response = await getNowPlaying().catch(err => console.log(err))
     if (response === undefined || response.status === 204 || response.status > 400) {
         return false
     }
     const song = await response.json()
+    console.log(song)
     const albumImageUrl = song.item.album.images[0].url
     const artist = song.item.artists.map((_artist) => _artist.name).join(", ")
     const isPlaying = song.is_playing

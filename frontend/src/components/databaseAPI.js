@@ -14,6 +14,8 @@ export const postSong = async (song, color) => {
     delete newSong.artist
     delete newSong.isPlaying
 
+    // TODO Make it so that each 
+
     const response = await fetch('http://localhost:5050/songs/', {
         method: "POST",
         headers: {

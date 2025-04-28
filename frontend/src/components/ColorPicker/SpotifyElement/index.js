@@ -64,29 +64,9 @@ const SpotifyElement = (props) => {
         }
     }, [])
 
-    
-
-
-
-    
-    // const [queryParameters] = useSearchParams()
-
-    // useEffect(() => {
-    //     let code = queryParameters.get("code")
-    //     let storageCode = window.localStorage.getItem("code")
-    
-    //     if (!storageCode && code) {
-    //         storageCode = code
-    
-    //         window.location.hash = ""
-    //         window.localStorage.setItem("code", code)
-    //     }
-    //     setCode(code)
-    // }, [queryParameters])
-
     const logout = () => {
         setUsername("")
-        window.localStorage.removeItem("code")
+        window.localStorage.removeItem("access_token")
     }
 
     return (

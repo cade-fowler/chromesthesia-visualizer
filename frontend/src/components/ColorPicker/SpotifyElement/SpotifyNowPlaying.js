@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import getNowPlayingItem from "./SpotifyAPI";
-import SpotifyLogo from "./SpotifyLogo";
+import { getNowPlayingItem } from "./SpotifyAPI";
+// import SpotifyLogo from "./SpotifyLogo";
 import PlayingAnimation from "./PlayingAnimation";
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
