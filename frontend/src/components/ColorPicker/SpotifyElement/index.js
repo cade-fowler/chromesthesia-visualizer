@@ -55,21 +55,26 @@ const SpotifyElement = (props) => {
             {username ? "Hi, " + username : "No name"}
             <div className="login-out">
                 {!code ? 
-                    <a href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}>Login</a>
-                    : <button onClick={logout}>Logout</button>
+                    <a 
+                        href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}
+                        className='main-button'
+                    >
+                        Login
+                        </a>
+                    : <button onClick={logout} className='main-button'>Logout</button>
                 }
             </div>
             <SpotifyNowPlaying 
                 song={currentSong}
                 onSongChange={setCurrentSong}
             />
-            <div className="temp">
+            {/* <div className="temp">
                 id = {currentSong ? currentSong.id : "No ID"}
                 color = {props.color}
                 <div style={{'background': props.color}}>{props.color}</div>
-            </div>
+            </div> */}
             <div>
-                <button onClick={_ => postSong(currentSong, props.color)}>Save</button>
+                <button onClick={_ => postSong(currentSong, props.color)} className='main-button'>Save</button>
             </div>
         </div>
     )

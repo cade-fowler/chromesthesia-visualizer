@@ -7,25 +7,6 @@
     height: 95%;
     padding: 5%;
     margin-bottom: 5%;
-
-    .login-out {
-        
-
-        button, a {
-            border: $medium-color solid 3px;
-            border-radius: 5px;
-            background: none;
-            color: $medium-color;
-            font-size: 1.25rem;
-            padding: 10%;
-            text-decoration: none;
-
-            :hover {
-                background-color: $medium-color;
-                color: $dark-color;
-            } // TODO not working
-        }
-    }
 }
 
 .player {
@@ -51,70 +32,73 @@
             width: 100%;
         }
     }
-
-    .song-box {
-        border: $medium-color solid 3px;
-        border-radius: 15px;
-        display: flex;
-
-        .album-art {
-            width: 25%;
-            height: auto;
-            padding: 5%;
-            border-radius: 18%;
-        }
-
-        .song-info {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-evenly;
-            width: 100%;
-            padding-top: 8%;
-            padding-bottom: 8%;
-
-            .top-line {
-                display: flex;
-                width: auto;
-                font-size: 2rem;
-                padding-right: 5%;
-
-                .playing-animation {
-                    padding-right: 5%;
-                }
-        
-                .song-name {
-                    text-decoration: none;
-                    color: $light-color;
-                    font-weight: bold;
-                    flex-grow: 1;
-                }
-            }
-            
-            .artist-name {
-                font-size: 1.5rem;
-                margin: 0;
-                color: $medium-color;
-            }
-        }        
-    }
-}
-
-.swatch-box {
-    display: inline-flex;
-    width: 100%;
-    height: 100%;
-    padding-top: 3%;
-    // border: 1px solid orange;
-
-    .swatch {
-        flex-grow: 1;
-        min-height: 100px;
-    }
 }
 
 .temp {
     border: 1px solid whitesmoke;
     color: whitesmoke;
+}
+
+.main-button {
+    border: $medium-color solid 3px;
+    border-radius: 5px;
+    background: none;
+    color: $medium-color;
+    font-size: 1.25rem;
+    padding: .5rem;
+    margin: .5rem;
+    text-decoration: none;
+
+    :hover {
+        background-color: $medium-color;
+        color: $dark-color;
+    } // TODO not working
+}
+
+.song-box {
+    border: $medium-color solid 3px;
+    border-radius: 15px;
+    display: flex;
+
+    .album-art {
+        width: 25%;
+        height: auto;
+        padding: 5%;
+        border-radius: 18%;
+    }
+
+    .song-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        width: 100%;
+        padding-top: 8%;
+        padding-bottom: 8%;
+
+        .top-line {
+            display: flex;
+            width: auto;
+            font-size: 2rem;
+            padding-right: 5%;
+
+            .playing-animation {
+                padding-right: 5%;
+            }
+    
+            .song-name {
+                text-decoration: none;
+                color: $light-color;
+                font-weight: bold;
+                flex-grow: 1;
+            }
+        }
+        
+        .artist-name {
+            font-size: 1.5rem;
+            margin: 0;
+            color: $medium-color;
+        }
+    }        
 }
 
 // sparks 2:20 

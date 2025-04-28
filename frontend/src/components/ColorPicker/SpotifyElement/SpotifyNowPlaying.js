@@ -25,8 +25,8 @@ const SpotifyNowPlaying = (props) => {
                 setLoading(false);
 
                 if (props.song) {
-                    // Promise.all([getColors(props.song.id)])
-                    Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
+                    Promise.all([getColors(props.song.id)])
+                    // Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
                         .then((results) => {
                             setColors(results[0]);
                         }
