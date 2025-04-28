@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import getNowPlayingItem from "./SpotifyAPI";
+import ColorSwatch from "./ColorSwatch/ColorSwatch";
 import SpotifyLogo from "./SpotifyLogo";
 import PlayingAnimation from "./PlayingAnimation";
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
@@ -24,7 +25,8 @@ const SpotifyNowPlaying = (props) => {
                 setLoading(false);
 
                 if (props.song) {
-                    Promise.all([getColors(props.song.id)])
+                    // Promise.all([getColors(props.song.id)])
+                    Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
                         .then((results) => {
                             setColors(results[0]);
                         }
@@ -58,9 +60,9 @@ const SpotifyNowPlaying = (props) => {
             <div className="swatch-box">
                 { Array.isArray(colors) ? 
                     colors.map(color => (
-                        <div className="swatch" style={{'background': color}} key={color}>{color}</div> //TODO fix key when duplicate colors
+                        <ColorSwatch color={color}/>
                     )) 
-                    : ( <div>No Colors</div> )
+                    : ( <div>No colors have been set for this song.</div> )
                 }
             </div>
             
