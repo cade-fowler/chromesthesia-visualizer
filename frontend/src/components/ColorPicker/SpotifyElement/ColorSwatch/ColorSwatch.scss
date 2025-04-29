@@ -2,7 +2,7 @@
     display: flex;
     flex-wrap: wrap;
     width: 100%;
-    height: 100%;
+    height: auto;
     padding-top: 3%;
     // border: 1px solid orange;
 }
@@ -10,7 +10,9 @@
 .swatch {
     flex-grow: 1;
     min-height: 10rem;
+    max-height: 30%;
     min-width: 20%;
+    border: none;
 
     transition-duration: .3s;
     transition-property: transform;
@@ -48,12 +50,12 @@
 
 .swatch-button {
     position: absolute;
-    background-color: rgba($color: #000000, $alpha: 0);
+    // background-color: rgba($color: #000000, $alpha: 0);
     border: none;
     border-radius: 30%;
     font-size: 1rem;
 
-    &:hover {
-        background-color: rgba($color: #000000, $alpha: .2);
-    }
+    // &:hover {
+    //     background-color: rgba($color: #000000, $alpha: .2);
+    // }
 }
