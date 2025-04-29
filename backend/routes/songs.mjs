@@ -1,6 +1,5 @@
 import express from "express";
 import db from "../db/conn.mjs";
-import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -16,7 +15,7 @@ router.get("/:id", async (req, res) => {
     else res.send(result).status(200);
 });
 
-// Add new song
+// Add new song or new color to existing song
 router.post("/", async (req, res) => {
     // const query = {id: req.params.id};
     let color = req.body.color
@@ -34,10 +33,7 @@ router.post("/", async (req, res) => {
             console.log(error)
             res.send({"Error": "Unable to add song"}).status(400)
         }
-        
     } else {
-        console.log("already in database")
-        
         try {
             let r = await db.collection("songs").updateOne(
                 {id: req.body.id},
@@ -48,21 +44,8 @@ router.post("/", async (req, res) => {
             console.log(error)
             res.send({"Error": "Unable to add color"}).status(400)
         }
-        
     }
 });
-
-// // Add new colors to song
-// router.post("/", async (req, res) => {
-//     const query = {id: req.params.id};
-
-//     let song = await db.collection("songs").insertOne(req.body);
-//     let result = song.colors;
-  
-//     if (!result) res.send("Not found").status(404);
-//     else res.send(result).status(200);
-
-// });
 
 // Get song colors
 router.get("/:id/colors/", async (req, res) => {
@@ -83,6 +66,11 @@ router.get("/", async (req, res) => {
       .limit(50)
       .toArray();
     res.send(results).status(200);
+});
+
+router.delete("/:id", async (req, res) => {
+    console.log(req.params.id)
+    console.log(req.body.color)
 });
 
 

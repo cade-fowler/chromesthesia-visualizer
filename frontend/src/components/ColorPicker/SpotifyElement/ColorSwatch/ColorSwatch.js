@@ -1,7 +1,7 @@
 import './ColorSwatch.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons'
-import { useState } from 'react'
+import { faTrashCan } from '@fortawesome/free-regular-svg-icons'
+import { useEffect, useState } from 'react'
 
 const ColorSwatch = (props) => {
 
@@ -12,16 +12,9 @@ const ColorSwatch = (props) => {
         return (red + green + blue) / 3 <= 140
     }
 
-    const [isHoverEdit, setIsHoverEdit] = useState(false);
     const [isHoverDelete, setIsHoverDelete] = useState(false);
     const [deletePressed, setDeletePressed] = useState(false);
 
-    const handleMouseEnterEdit = () => {
-        setIsHoverEdit(true);
-    };
-    const handleMouseLeaveEdit = () => {
-        setIsHoverEdit(false);
-    };
     const handleMouseEnterDelete = () => {
         setIsHoverDelete(true);
     };
@@ -32,23 +25,13 @@ const ColorSwatch = (props) => {
     const buttonColor = isDark() ? 'rgba(255, 255, 255, 0)' : 'rgba(0, 0, 0, 0)';
     const buttonHoverColor = isDark() ? 'rgba(255, 255, 255, .2)' : 'rgba(0, 0, 0, .2)';
 
+    useEffect(() => {
+        
+    })
+
     return (
         <div className="swatch" style={{'background': props.color}} >
             <div className="swatch-text" style={{color: isDark() ? "#f5f5f5" : "#1c1c1c"}}>
-                {/* <button 
-                    className="edit swatch-button" 
-                    onMouseEnter={handleMouseEnterEdit}
-                    onMouseLeave={handleMouseLeaveEdit}
-                    style={ isHoverEdit ?
-                        {backgroundColor: buttonHoverColor} :
-                        {backgroundColor: buttonColor}
-                    }
-                >
-                    <FontAwesomeIcon 
-                        icon={faPenToSquare} 
-                        style={isDark() ? {color: "#f5f5f5"} : {color: "#1c1c1c"}}
-                    />
-                </button> */}
                 <div className="delete">
                     <button 
                         className="swatch-button" 
@@ -82,17 +65,6 @@ const ColorSwatch = (props) => {
                 </div>
                 {props.color}
             </div>
-                {/* <div className="edit-modal">
-                Pick a new color to replace this one with.
-                <button>Save</button>
-                <button>Cancel</button>
-            </div> */}
-            {/* <div className="delete-modal" style={deletePressed ? {display: "block"} : {display: "none"}}>
-                Are you sure you would like to delete this color?
-                {props.color}
-                <button>Delete</button>
-                <button onClick={_ => setDeletePressed(false)}>Cancel</button>
-            </div> */}
         </div>  
     )
 }

@@ -59,11 +59,10 @@ const SpotifyElement = (props) => {
             ]).then((results) => {
                 setCurrentSong(results[0]);
                 if (currentSong) {
-                    // Promise.all([getColors(currentSong.id)])
-                    Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
+                    Promise.all([getColors(currentSong.id)])
+                    // Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
                         .then((results) => {
                             setColors(results[0]);
-                            console.log(colors)
                         }
                     );
                 }
@@ -97,7 +96,7 @@ const SpotifyElement = (props) => {
             <div className="swatch-box">
                 { Array.isArray(colors) ? 
                     colors.map(color => (
-                        <ColorSwatch color={color}/>
+                        <ColorSwatch color={color} key={color} songId={currentSong.id}/>
                     )) 
                     : ( <div>No colors have been set for this song.</div> )
                 }

@@ -59,7 +59,7 @@
 
 .delete-hidden {
     display: block;
-    background-color: none;
+    background-color: rgba(0, 0, 0, 0);
     border-radius: 5px;
 }
 
@@ -68,6 +68,7 @@
     color: red;
     border-color: red;
     border-radius: 5px;
+    margin-bottom: 2px;
 }
 
 .delete-modal {
