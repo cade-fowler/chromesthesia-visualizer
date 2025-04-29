@@ -39,23 +39,55 @@
 }
 
 .delete {
+    position: absolute;
     right: .5rem;
     top: .5rem;
 }
 
 .edit {
+    position: absolute;
     left: .5rem;
     top: .5rem;
 }
 
 .swatch-button {
-    position: absolute;
-    // background-color: rgba($color: #000000, $alpha: 0);
     border: none;
     border-radius: 30%;
     font-size: 1rem;
 
-    // &:hover {
-    //     background-color: rgba($color: #000000, $alpha: .2);
-    // }
+}
+
+.delete-hidden {
+    display: block;
+    background-color: none;
+    border-radius: 5px;
+}
+
+.confirm {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: red;
+    border-color: red;
+    border-radius: 5px;
+}
+
+.delete-modal {
+    background-color: whitesmoke;
+    color: black;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.2);
+    top: calc(100% + 10px);
+    border-radius: 1rem;
+    padding: 10px;
+
+    &:before {
+        content: "";
+        position: absolute;
+        top: -20px;
+        left: 45%;
+        z-index: 1;
+        border: solid 10px transparent;
+        border-bottom-color: whitesmoke;
+    }
 }

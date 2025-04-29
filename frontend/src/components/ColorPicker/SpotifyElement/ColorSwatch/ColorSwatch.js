@@ -14,6 +14,7 @@ const ColorSwatch = (props) => {
 
     const [isHoverEdit, setIsHoverEdit] = useState(false);
     const [isHoverDelete, setIsHoverDelete] = useState(false);
+    const [deletePressed, setDeletePressed] = useState(false);
 
     const handleMouseEnterEdit = () => {
         setIsHoverEdit(true);
@@ -32,9 +33,9 @@ const ColorSwatch = (props) => {
     const buttonHoverColor = isDark() ? 'rgba(255, 255, 255, .2)' : 'rgba(0, 0, 0, .2)';
 
     return (
-        <button className="swatch" style={{'background': props.color}} >
-            <div className="swatch-text" style={isDark() ? {color: "#f5f5f5"} : {color: "#1c1c1c"}}>
-                <button 
+        <div className="swatch" style={{'background': props.color}} >
+            <div className="swatch-text" style={{color: isDark() ? "#f5f5f5" : "#1c1c1c"}}>
+                {/* <button 
                     className="edit swatch-button" 
                     onMouseEnter={handleMouseEnterEdit}
                     onMouseLeave={handleMouseLeaveEdit}
@@ -47,24 +48,52 @@ const ColorSwatch = (props) => {
                         icon={faPenToSquare} 
                         style={isDark() ? {color: "#f5f5f5"} : {color: "#1c1c1c"}}
                     />
-                </button>
-                <button 
-                    className="delete swatch-button" 
-                    onMouseEnter={handleMouseEnterDelete}
-                    onMouseLeave={handleMouseLeaveDelete}
-                    style={ isHoverDelete ?
-                        {backgroundColor: buttonHoverColor} :
-                        {backgroundColor: buttonColor}
-                    }
-                >
-                    <FontAwesomeIcon 
-                        icon={faTrashCan} 
-                        style={isDark() ? {color: "#f5f5f5"} : {color: "#1c1c1c"}}
-                    />
-                </button>
+                </button> */}
+                <div className="delete">
+                    <button 
+                        className="swatch-button" 
+                        onMouseEnter={handleMouseEnterDelete}
+                        onMouseLeave={handleMouseLeaveDelete}
+                        onClick={_ => setDeletePressed(!deletePressed)}
+                        style={{
+                            backgroundColor: isHoverDelete ? buttonHoverColor : buttonColor,
+                            display: deletePressed ? "none" : "block"
+                        }}
+                    >
+                        <FontAwesomeIcon 
+                            icon={faTrashCan} 
+                            style={{color: isDark() ?  "#f5f5f5" : "#1c1c1c"}}
+                        />
+                    </button>
+                    <button className='delete-hidden confirm' style={{display: deletePressed ? "block" : "none"}}>
+                        Delete
+                    </button>
+                    <button 
+                        className='delete-hidden' 
+                        style={{
+                            display: deletePressed ? "block" : "none",
+                            color: isDark() ?  "#f5f5f5" : "#1c1c1c",
+                            borderColor: isDark() ?  "#f5f5f5" : "#1c1c1c",
+                        }}
+                        onClick={_ => setDeletePressed(false)}
+                    >
+                        Cancel
+                    </button>
+                </div>
                 {props.color}
             </div>
-        </button> 
+                {/* <div className="edit-modal">
+                Pick a new color to replace this one with.
+                <button>Save</button>
+                <button>Cancel</button>
+            </div> */}
+            {/* <div className="delete-modal" style={deletePressed ? {display: "block"} : {display: "none"}}>
+                Are you sure you would like to delete this color?
+                {props.color}
+                <button>Delete</button>
+                <button onClick={_ => setDeletePressed(false)}>Cancel</button>
+            </div> */}
+        </div>  
     )
 }
 
