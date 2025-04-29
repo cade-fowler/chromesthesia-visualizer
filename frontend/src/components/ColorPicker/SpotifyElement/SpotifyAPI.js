@@ -60,7 +60,7 @@ export const getNowPlaying = async (client_id, client_secret, refresh_token) => 
     })
 }
 
-export default async function getNowPlayingItem(
+export async function getNowPlayingItem(
     client_id,
     client_secret,
     refresh_token
