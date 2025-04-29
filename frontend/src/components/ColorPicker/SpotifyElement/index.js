@@ -77,10 +77,10 @@ const SpotifyElement = (props) => {
         <div  className='spotify'>
             {username ? "Hi, " + username : "No name"}
             <div className="login-out">
-                {/* {!code ?  */}
-                    <button onClick={login}>Login</button>
-                    {/* : <button onClick={logout}>Logout</button>
-                } */}
+                {!currentToken.access_token ?  
+                    <button onClick={login}>Login</button> :
+                    <button onClick={logout}>Logout</button>
+                } 
             </div>
             <SpotifyNowPlaying 
                 song={currentSong}
