@@ -1,19 +1,19 @@
 import './index.scss'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+// import { useSearchParams } from 'react-router-dom'
 import SpotifyNowPlaying from './SpotifyNowPlaying'
 import { getUsername, getNowPlayingItem } from './SpotifyAPI'
 import { postSong } from '../../databaseAPI'
 import ColorSwatch from './ColorSwatch/ColorSwatch'
 import { getColors } from '../../databaseAPI'
+import { login, getToken, currentToken } from './SpotifyAPI'
 
 const SpotifyElement = (props) => {
-    const REDIRECT_URI = "http://localhost:3000"
-    const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
-    const RESPONSE_TYPE = "code"
-    const SCOPE = "user-read-currently-playing user-top-read user-read-private"
+    // const REDIRECT_URI = "http://localhost:3000"
+    // const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
+    // const RESPONSE_TYPE = "code"
+    // const SCOPE = "user-read-currently-playing user-top-read user-read-private"
 
-    const [code, setCode] = useState("")
     const [username, setUsername] = useState("")
 
     const [currentSong, setCurrentSong] = useState({id: 0, isPlaying: false})
@@ -22,73 +22,65 @@ const SpotifyElement = (props) => {
 
     useEffect(() => {
         Promise.all([
-            getUsername(
-                props.client_id,
-                props.client_secret,
-                props.refresh_token
-            ),
+            getUsername()
         ]).then((results) => {
             setUsername(results[0]);
         });
     }, [props.client_id, props.client_secret, props.refresh_token]);
-    
-    const [queryParameters] = useSearchParams()
 
     useEffect(() => {
-        let code = queryParameters.get("code")
-        let storageCode = window.localStorage.getItem("code")
-    
-        if (!storageCode && code) {
-            storageCode = code
-    
-            window.location.hash = ""
-            window.localStorage.setItem("code", code)
-            console.log(window.localStorage.getItem("code"))
-        }
-        setCode(code)
-    }, [queryParameters])
+        // On page load, try to fetch auth code from current browser search URL
+        const args = new URLSearchParams(window.location.search);
+        const code = args.get('code');
 
-    useEffect(() => {
-        const spotifyTimeout = setTimeout(() => {
-            Promise.all([
-                getNowPlayingItem(
-                    props.client_id,
-                    props.client_secret,
-                    props.refresh_token
-                ),
-            ]).then((results) => {
-                setCurrentSong(results[0]);
-                if (currentSong) {
-                    Promise.all([getColors(currentSong.id)])
-                    // Promise.all([getColors("2kXjRzwcTZhGLnVjUud8l3")])
-                        .then((results) => {
-                            setColors(results[0]);
-                        }
-                    );
+        console.log(code)
+        console.log('lajsdlkjslkdsjfldksj')
+        // If we find a code, we're in a callback, do a token exchange
+        if (code) {
+            async function updateToken() {
+                const token = await getToken(code);
+                if ('access_token' in token) {
+                    console.log('getting there')
+                    console.log(token.access_token)
+                    window.localStorage.setItem('access_token', token.access_token)
                 }
-            }).catch(err => console.log(err));
-        }, 5000);
-    });
+
+                // Remove code from URL so we can refresh correctly.
+                const url = new URL(window.location.href);
+                url.searchParams.delete("code");
+
+                const updatedUrl = url.search ? url.href : url.href.replace('?', '');
+                window.history.replaceState({}, document.title, updatedUrl);
+                console.log('222')
+            }
+            updateToken();
+            console.log('111')
+        }
+
+        // If we have a token, we're logged in, so fetch user data and render logged in template
+        if (currentToken.access_token) {
+            console.log('no fuck')
+        }
+
+        // Otherwise we're not logged in, so render the login template
+        if (!currentToken.access_token) {
+            console.log('fuck')  
+        }
+    }, [])
 
     const logout = () => {
-        setCode("")
         setUsername("")
-        window.localStorage.removeItem("code")
+        window.localStorage.removeItem("access_token")
     }
 
     return (
         <div  className='spotify'>
             {username ? "Hi, " + username : "No name"}
             <div className="login-out">
-                {!code ? 
-                    <a 
-                        href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_SPOTIFY_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPE}`}
-                        className='main-button'
-                    >
-                        Login
-                        </a>
-                    : <button onClick={logout} className='main-button'>Logout</button>
-                }
+                {/* {!code ?  */}
+                    <button onClick={login}>Login</button>
+                    {/* : <button onClick={logout}>Logout</button>
+                } */}
             </div>
             <SpotifyNowPlaying 
                 song={currentSong}
