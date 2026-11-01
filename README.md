@@ -24,4 +24,6 @@ A web app for recording the colors I perceive in music (chromesthesia) and analy
 
 ## License
 
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
 ## Contact
