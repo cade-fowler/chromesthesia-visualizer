@@ -1,23 +1,49 @@
-import './index.scss'
 import { NavLink, Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faEyeDropper } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faEyeDropper, type IconDefinition } from '@fortawesome/free-solid-svg-icons'
 
-const Navbar = () => (
-    <div className="nav-bar">
-        <Link className='logo' to='/'>
-            Chromesthesia Visualizer
-        </Link>
-        <nav>
-            <NavLink end to='/' className='color-picker-link'>  
-                <FontAwesomeIcon icon={faEyeDropper} color='#6b7a85'/>
-            </NavLink>
-            <NavLink to='/databaseexplorer' className='database-explorer-link'>  
-                <FontAwesomeIcon icon={faMagnifyingGlass} color='#6b7a85'/>
-            </NavLink>
-        </nav>
-    </div>
+interface NavItemProps {
+    to: string
+    icon: IconDefinition
+    label: string
+}
+
+// Shows an icon; on hover the icon fades out and the label fades in over it
+const NavItem = ({ to, icon, label }: NavItemProps) => (
+    <NavLink
+        to={to}
+        end
+        className="group grid h-full w-1/4 place-items-center text-center text-[30px] no-underline"
+    >
+        {({ isActive }) => (
+            <>
+                <FontAwesomeIcon
+                    icon={icon}
+                    className={`col-start-1 row-start-1 transition-opacity duration-300 ease-out group-hover:opacity-0 ${
+                        isActive ? 'text-spotify' : 'text-medium'
+                    }`}
+                />
+                <span className="col-start-1 row-start-1 text-[22px] tracking-[2px] text-spotify opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
+                    {label}
+                </span>
+            </>
+        )}
+    </NavLink>
 )
 
+const Navbar = () => (
+    <header className="fixed bottom-0 z-10 flex h-(--height-navbar) w-full min-w-[300px] items-center justify-between bg-dark">
+        <Link
+            to="/"
+            className="hidden pl-[25px] font-display text-[45px] tracking-[2px] text-medium no-underline min-[1075px]:block"
+        >
+            Chromesthesia Visualizer
+        </Link>
+        <nav className="flex h-full w-full justify-evenly min-[1075px]:w-1/2">
+            <NavItem to="/" icon={faEyeDropper} label="COLOR PICKER" />
+            <NavItem to="/databaseexplorer" icon={faMagnifyingGlass} label="DATABASE EXPLORER" />
+        </nav>
+    </header>
+)
 
 export default Navbar
