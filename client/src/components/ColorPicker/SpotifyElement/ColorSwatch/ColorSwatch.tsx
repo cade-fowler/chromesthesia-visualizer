@@ -1,4 +1,3 @@
-import './ColorSwatch.scss'
 import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-regular-svg-icons'
@@ -10,44 +9,44 @@ interface ColorSwatchProps {
 }
 
 const ColorSwatch = ({ color }: ColorSwatchProps) => {
-    const [isHoverDelete, setIsHoverDelete] = useState(false)
-    const [deletePressed, setDeletePressed] = useState(false)
-
+    const [confirmingDelete, setConfirmingDelete] = useState(false)
     const textColor = textColorOn(color)
-    const buttonColor = isDark(color) ? 'rgba(255, 255, 255, 0)' : 'rgba(0, 0, 0, 0)'
-    const buttonHoverColor = isDark(color) ? 'rgba(255, 255, 255, .2)' : 'rgba(0, 0, 0, .2)'
 
     return (
-        <div className="swatch" style={{ background: color }}>
-            <div className="swatch-text" style={{ color: textColor }}>
-                <div className="delete">
-                    <button
-                        className="swatch-button"
-                        onMouseEnter={() => setIsHoverDelete(true)}
-                        onMouseLeave={() => setIsHoverDelete(false)}
-                        onClick={() => setDeletePressed(!deletePressed)}
-                        style={{
-                            backgroundColor: isHoverDelete ? buttonHoverColor : buttonColor,
-                            display: deletePressed ? 'none' : 'block',
-                        }}
-                    >
-                        <FontAwesomeIcon icon={faTrashCan} style={{ color: textColor }} />
-                    </button>
-                    {/* TODO: wire up to the delete API */}
-                    <button className='delete-hidden confirm' style={{ display: deletePressed ? 'block' : 'none' }}>
-                        Delete
-                    </button>
-                    <button
-                        className='delete-hidden'
-                        style={{
-                            display: deletePressed ? 'block' : 'none',
-                            color: textColor,
-                            borderColor: textColor,
-                        }}
-                        onClick={() => setDeletePressed(false)}
-                    >
-                        Cancel
-                    </button>
+        <div
+            className="group relative max-h-[30%] min-h-40 min-w-1/5 grow transition-transform duration-300 hover:scale-110"
+            style={{ background: color }}
+        >
+            <div
+                className="flex h-full items-center justify-center overflow-hidden opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{ color: textColor }}
+            >
+                <div className="absolute top-2 right-2 flex flex-col gap-0.5">
+                    {confirmingDelete ? (
+                        <>
+                            {/* TODO: wire up to the delete API */}
+                            <button className="rounded-[5px] border border-red-600 bg-red-600/20 px-2 text-red-600">
+                                Delete
+                            </button>
+                            <button
+                                className="rounded-[5px] border px-2"
+                                style={{ color: textColor, borderColor: textColor }}
+                                onClick={() => setConfirmingDelete(false)}
+                            >
+                                Cancel
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            aria-label={`Delete ${color}`}
+                            className={`rounded-[30%] px-1.5 py-1 text-base ${
+                                isDark(color) ? 'hover:bg-white/20' : 'hover:bg-black/20'
+                            }`}
+                            onClick={() => setConfirmingDelete(true)}
+                        >
+                            <FontAwesomeIcon icon={faTrashCan} style={{ color: textColor }} />
+                        </button>
+                    )}
                 </div>
                 {color}
             </div>

@@ -109,7 +109,7 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                 }
             </div>
             <SpotifyNowPlaying song={currentSong} />
-            <div className="swatch-box">
+            <div className="flex w-full flex-wrap pt-[3%]">
                 {colors.length > 0
                     ? colors.map(color => <ColorSwatch color={color} key={color} />)
                     : <div>No colors have been set for this song.</div>
