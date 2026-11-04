@@ -2,7 +2,7 @@ import './index.scss'
 import ColorPickerElement from './ColorPickerElement'
 import SpotifyElement from './SpotifyElement'
 import { useState } from 'react'
-import type { HexColor } from '../../types'
+import type { HexColor } from '@chromesthesia/shared'
 
 const ColorPicker = () => {
     const [currentColor, setCurrentColor] = useState<HexColor>('#ffffff');

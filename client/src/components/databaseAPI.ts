@@ -1,4 +1,4 @@
-import type { HexColor, NowPlaying, Song } from '../types';
+import type { HexColor, NowPlaying, Song } from '@chromesthesia/shared';
 
 export const getColors = async (id: string): Promise<HexColor[]> => {
     const response = await fetch(`/api/songs/${encodeURIComponent(id)}/colors`);

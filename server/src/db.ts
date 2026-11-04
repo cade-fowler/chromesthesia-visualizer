@@ -1,4 +1,5 @@
 import { MongoClient } from "mongodb";
+import type { Song } from "@chromesthesia/shared";
 
 const connectionString = process.env.CONNECTION_STRING;
 if (!connectionString) {
@@ -9,4 +10,5 @@ const client = new MongoClient(connectionString);
 await client.connect();
 
 const db = client.db(process.env.DB_NAME || "colordatabase");
-export default db;
+
+export const songs = db.collection<Song>("songs");

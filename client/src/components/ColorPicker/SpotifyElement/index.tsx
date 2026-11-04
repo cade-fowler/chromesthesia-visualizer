@@ -4,7 +4,7 @@ import SpotifyNowPlaying from './SpotifyNowPlaying'
 import ColorSwatch from './ColorSwatch/ColorSwatch'
 import { getColors, postSong } from '../../databaseAPI'
 import { login, logout, getToken, getUsername, getNowPlayingItem, currentToken } from './SpotifyAPI'
-import type { HexColor, NowPlaying } from '../../../types'
+import type { HexColor, NowPlaying } from '@chromesthesia/shared'
 
 const POLL_INTERVAL_MS = 5000
 

@@ -1,4 +1,4 @@
-import type { NowPlaying } from '../../../types';
+import type { NowPlaying } from '@chromesthesia/shared';
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 const AUTHORIZATION_ENDPOINT = 'https://accounts.spotify.com/authorize';

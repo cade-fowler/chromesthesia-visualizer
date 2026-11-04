@@ -1,6 +1,6 @@
 import './index.scss'
 import { HexColorPicker, HexColorInput } from 'react-colorful'
-import type { HexColor } from '../../../types'
+import type { HexColor } from '@chromesthesia/shared'
 import { textColorOn } from '../../../utils/color'
 
 interface ColorPickerElementProps {

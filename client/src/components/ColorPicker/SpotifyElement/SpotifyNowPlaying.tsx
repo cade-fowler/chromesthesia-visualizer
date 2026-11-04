@@ -1,7 +1,7 @@
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import PlayingAnimation from './PlayingAnimation'
-import type { NowPlaying } from '../../../types'
+import type { NowPlaying } from '@chromesthesia/shared'
 import './index.scss'
 
 interface SpotifyNowPlayingProps {

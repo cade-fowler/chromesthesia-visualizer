@@ -2,7 +2,7 @@ import './ColorSwatch.scss'
 import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrashCan } from '@fortawesome/free-regular-svg-icons'
-import type { HexColor } from '../../../../types'
+import type { HexColor } from '@chromesthesia/shared'
 import { isDark, textColorOn } from '../../../../utils/color'
 
 interface ColorSwatchProps {

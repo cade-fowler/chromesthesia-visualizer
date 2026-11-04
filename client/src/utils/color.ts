@@ -1,4 +1,4 @@
-import type { HexColor } from '../types';
+import type { HexColor } from '@chromesthesia/shared';
 
 export const LIGHT_TEXT = '#f5f5f5';
 export const DARK_TEXT = '#1c1c1c';
