@@ -1,12 +1,10 @@
-import querystring from 'querystring'
-import { Buffer } from 'buffer'
-
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
 const USER_ENDPOINT = `https://api.spotify.com/v1/me`
-const clientId = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
+const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 
-const redirectUri = 'http://localhost:3000';
+// Spotify requires the redirect URI to exactly match one registered in the dashboard
+const redirectUri = window.location.origin;
 const scope = 'user-read-private user-read-currently-playing';
 const authorizationEndpoint = "https://accounts.spotify.com/authorize";
 
@@ -97,40 +95,6 @@ export async function refreshToken() {
   
     return await response.json();
   }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const getAccessToken = async () => {
-//     const basic = Buffer.from(`${client_id}:${client_secret}`).toString("base64");
-//     const response = await fetch(TOKEN_ENDPOINT, {
-//         method: "POST",
-//         headers: {
-//             Authorization: `Basic ${basic}`,
-//             "Content-Type": "application/x-www-form-urlencoded",
-//         },
-//         body: querystring.stringify({
-//             grant_type: "refresh_token",
-//             refresh_token,
-//         }),
-//     }).catch(err => console.log(err))
-    
-//     return response.json().catch(err => console.log(err))
-// }
 
 export const getUsername = async () => {
     const response = await fetch(USER_ENDPOINT, {
