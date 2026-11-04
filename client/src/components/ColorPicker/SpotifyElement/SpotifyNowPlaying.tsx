@@ -1,14 +1,14 @@
-import { faSpotify } from '@fortawesome/free-brands-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { NowPlaying } from '@chromesthesia/shared'
-import PlayingAnimation from './PlayingAnimation'
+import { faSpotify } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { NowPlaying } from '@chromesthesia/shared';
+import PlayingAnimation from './PlayingAnimation';
 
 interface SpotifyNowPlayingProps {
-    song: NowPlaying | null
+    song: NowPlaying | null;
 }
 
 const SpotifyNowPlaying = ({ song }: SpotifyNowPlayingProps) => {
-    const isPlaying = song?.isPlaying ?? false
+    const isPlaying = song?.isPlaying ?? false;
 
     return (
         <div className="mx-[5%] max-w-[90%] font-body">
@@ -46,7 +46,7 @@ const SpotifyNowPlaying = ({ song }: SpotifyNowPlayingProps) => {
                 </div>
             )}
         </div>
-    )
-}
+    );
+};
 
-export default SpotifyNowPlaying
+export default SpotifyNowPlaying;

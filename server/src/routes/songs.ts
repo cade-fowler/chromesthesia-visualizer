@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { z } from "zod";
-import type { Filter } from "mongodb";
-import type { AddColorRequest, ApiError, HexColor, Song } from "@chromesthesia/shared";
-import { songs } from "../db.js";
+import { Router } from 'express';
+import { z } from 'zod';
+import type { Filter } from 'mongodb';
+import type { AddColorRequest, ApiError, HexColor, Song } from '@chromesthesia/shared';
+import { songs } from '../db.js';
 
 const router = Router();
 
@@ -11,12 +11,10 @@ type NoParams = Record<string, never>;
 // Accepts #rgb or #rrggbb in any case; stores lowercase #rrggbb so "#FFF" and "#ffffff" match
 const hexColor = z
     .string()
-    .regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i, "Expected a color like #ff8800")
-    .transform(hex => {
+    .regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i, 'Expected a color like #ff8800')
+    .transform((hex) => {
         const digits = hex.slice(1).toLowerCase();
-        return digits.length === 3
-            ? `#${[...digits].map(d => d + d).join("")}`
-            : `#${digits}`;
+        return digits.length === 3 ? `#${[...digits].map((d) => d + d).join('')}` : `#${digits}`;
     });
 
 const addColorSchema = z.object({
@@ -39,9 +37,9 @@ const listQuerySchema = z.object({
 const withoutMongoId = { projection: { _id: 0 } } as const;
 
 // List songs, optionally filtered by ?title= or ?artist=
-router.get<NoParams, Song[] | ApiError>("/", async (req, res) => {
+router.get<NoParams, Song[] | ApiError>('/', async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid query" });
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid query' });
 
     const filter: Filter<Song> = {};
     if (parsed.data.title) filter.title = parsed.data.title;
@@ -52,21 +50,21 @@ router.get<NoParams, Song[] | ApiError>("/", async (req, res) => {
 });
 
 // Get one song by Spotify track id
-router.get<{ id: string }, Song | ApiError>("/:id", async (req, res) => {
+router.get<{ id: string }, Song | ApiError>('/:id', async (req, res) => {
     const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
-    if (!song) return res.status(404).json({ error: "Song not found" });
+    if (!song) return res.status(404).json({ error: 'Song not found' });
     res.json(song);
 });
 
 // Get the colors for one song
-router.get<{ id: string }, HexColor[] | ApiError>("/:id/colors", async (req, res) => {
+router.get<{ id: string }, HexColor[] | ApiError>('/:id/colors', async (req, res) => {
     const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
-    if (!song) return res.status(404).json({ error: "Song not found" });
+    if (!song) return res.status(404).json({ error: 'Song not found' });
     res.json(song.colors ?? []);
 });
 
 // Add a color to a song, creating the song if it's new
-router.post<NoParams, Song | ApiError>("/", async (req, res) => {
+router.post<NoParams, Song | ApiError>('/', async (req, res) => {
     const parsed = addColorSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ error: z.prettifyError(parsed.error) });
@@ -78,14 +76,14 @@ router.post<NoParams, Song | ApiError>("/", async (req, res) => {
     const updated = await songs().findOneAndUpdate(
         { id: song.id },
         { $set: song, $addToSet: { colors: color } },
-        { upsert: true, returnDocument: "after", ...withoutMongoId },
+        { upsert: true, returnDocument: 'after', ...withoutMongoId },
     );
     res.status(existed ? 200 : 201).json(updated!);
 });
 
 // TODO: remove a color from a song
-router.delete("/:id", (_req, res) => {
-    res.status(501).json({ error: "Not implemented" });
+router.delete('/:id', (_req, res) => {
+    res.status(501).json({ error: 'Not implemented' });
 });
 
 export default router;

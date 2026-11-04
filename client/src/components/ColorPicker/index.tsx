@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import type { HexColor } from '@chromesthesia/shared'
-import ColorPickerElement from './ColorPickerElement'
-import SpotifyElement from './SpotifyElement'
+import { useState } from 'react';
+import type { HexColor } from '@chromesthesia/shared';
+import ColorPickerElement from './ColorPickerElement';
+import SpotifyElement from './SpotifyElement';
 
 const ColorPicker = () => {
-    const [currentColor, setCurrentColor] = useState<HexColor>('#ffffff')
+    const [currentColor, setCurrentColor] = useState<HexColor>('#ffffff');
 
     return (
         <div className="flex h-full w-full flex-wrap items-stretch justify-evenly max-[1074px]:max-h-1/2">
@@ -15,7 +15,7 @@ const ColorPicker = () => {
                 <ColorPickerElement color={currentColor} onColorChange={setCurrentColor} />
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default ColorPicker
+export default ColorPicker;

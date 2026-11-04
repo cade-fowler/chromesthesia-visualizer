@@ -6,32 +6,32 @@ export type HexColor = string;
 
 /** The song Spotify reports as currently playing, shaped for the UI. */
 export interface NowPlaying {
-  id: string;
-  title: string;
-  /** Artist names joined with ", " */
-  artist: string;
-  albumImageUrl?: string;
-  songUrl: string;
-  isPlaying: boolean;
+    id: string;
+    title: string;
+    /** Artist names joined with ", " */
+    artist: string;
+    albumImageUrl?: string;
+    songUrl: string;
+    isPlaying: boolean;
 }
 
 /** A song as stored in MongoDB and returned by the API. */
 export interface Song {
-  /** Spotify track id */
-  id: string;
-  title: string;
-  artists: string[];
-  albumImageUrl?: string;
-  songUrl: string;
-  colors: HexColor[];
+    /** Spotify track id */
+    id: string;
+    title: string;
+    artists: string[];
+    albumImageUrl?: string;
+    songUrl: string;
+    colors: HexColor[];
 }
 
 /** Body of POST /api/songs: a song plus the color to attach to it. */
 export interface AddColorRequest extends Omit<Song, 'colors'> {
-  color: HexColor;
+    color: HexColor;
 }
 
 /** Shape of every API error response. */
 export interface ApiError {
-  error: string;
+    error: string;
 }

@@ -1,8 +1,5 @@
-
 const DatabaseExplorer = () => {
-    return (
-        <> Hi </>
-    )
-}
+    return <> Hi </>;
+};
 
-export default DatabaseExplorer
+export default DatabaseExplorer;

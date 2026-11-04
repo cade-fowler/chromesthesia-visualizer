@@ -32,9 +32,15 @@ interface SpotifyPlayback {
 
 /** Access/refresh tokens, persisted in localStorage. */
 export const currentToken = {
-    get access_token() { return localStorage.getItem('access_token'); },
-    get refresh_token() { return localStorage.getItem('refresh_token'); },
-    get expires() { return localStorage.getItem('expires'); },
+    get access_token() {
+        return localStorage.getItem('access_token');
+    },
+    get refresh_token() {
+        return localStorage.getItem('refresh_token');
+    },
+    get expires() {
+        return localStorage.getItem('expires');
+    },
 
     save(response: TokenResponse) {
         localStorage.setItem('access_token', response.access_token);
@@ -50,7 +56,7 @@ export const currentToken = {
 const TOKEN_KEYS = ['access_token', 'refresh_token', 'expires', 'expires_in', 'code_verifier'];
 
 export const logout = () => {
-    TOKEN_KEYS.forEach(key => localStorage.removeItem(key));
+    TOKEN_KEYS.forEach((key) => localStorage.removeItem(key));
 };
 
 /** Start the Authorization Code + PKCE flow by redirecting to Spotify. */
@@ -58,7 +64,7 @@ export const login = async () => {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const codeVerifier = Array.from(
         crypto.getRandomValues(new Uint8Array(64)),
-        x => possible[x % possible.length],
+        (x) => possible[x % possible.length],
     ).join('');
 
     const hashed = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
@@ -96,17 +102,19 @@ const postToken = async (params: Record<string, string>): Promise<TokenResponse>
 };
 
 /** Exchange the ?code=... from the login redirect for tokens. */
-export const getToken = (code: string) => postToken({
-    grant_type: 'authorization_code',
-    code,
-    redirect_uri: redirectUri,
-    code_verifier: localStorage.getItem('code_verifier') ?? '',
-});
+export const getToken = (code: string) =>
+    postToken({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: localStorage.getItem('code_verifier') ?? '',
+    });
 
-export const refreshToken = () => postToken({
-    grant_type: 'refresh_token',
-    refresh_token: currentToken.refresh_token ?? '',
-});
+export const refreshToken = () =>
+    postToken({
+        grant_type: 'refresh_token',
+        refresh_token: currentToken.refresh_token ?? '',
+    });
 
 /** Returns a usable access token, refreshing it first if it is about to expire. */
 const getAccessToken = async (): Promise<string | null> => {
@@ -146,7 +154,7 @@ export const getNowPlayingItem = async (): Promise<NowPlaying | null> => {
     return {
         id: item.id,
         title: item.name,
-        artist: item.artists.map(artist => artist.name).join(', '),
+        artist: item.artists.map((artist) => artist.name).join(', '),
         albumImageUrl: item.album.images[0]?.url,
         songUrl: item.external_urls.spotify,
         isPlaying: playback.is_playing,

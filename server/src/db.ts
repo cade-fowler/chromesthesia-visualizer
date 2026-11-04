@@ -1,5 +1,5 @@
-import { MongoClient, type Db } from "mongodb";
-import type { Song } from "@chromesthesia/shared";
+import { MongoClient, type Db } from 'mongodb';
+import type { Song } from '@chromesthesia/shared';
 
 let client: MongoClient | undefined;
 let db: Db | undefined;
@@ -18,8 +18,8 @@ export async function disconnectDb(): Promise<void> {
 }
 
 function getDb(): Db {
-    if (!db) throw new Error("Database not connected; call connectDb() first");
+    if (!db) throw new Error('Database not connected; call connectDb() first');
     return db;
 }
 
-export const songs = () => getDb().collection<Song>("songs");
+export const songs = () => getDb().collection<Song>('songs');

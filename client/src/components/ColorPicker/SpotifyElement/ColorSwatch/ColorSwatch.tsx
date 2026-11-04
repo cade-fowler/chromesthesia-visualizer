@@ -1,16 +1,16 @@
-import { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTrashCan } from '@fortawesome/free-regular-svg-icons'
-import type { HexColor } from '@chromesthesia/shared'
-import { isDark, textColorOn } from '../../../../utils/color'
+import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
+import type { HexColor } from '@chromesthesia/shared';
+import { isDark, textColorOn } from '../../../../utils/color';
 
 interface ColorSwatchProps {
-    color: HexColor
+    color: HexColor;
 }
 
 const ColorSwatch = ({ color }: ColorSwatchProps) => {
-    const [confirmingDelete, setConfirmingDelete] = useState(false)
-    const textColor = textColorOn(color)
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const textColor = textColorOn(color);
 
     return (
         <div
@@ -51,7 +51,7 @@ const ColorSwatch = ({ color }: ColorSwatchProps) => {
                 {color}
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default ColorSwatch
+export default ColorSwatch;

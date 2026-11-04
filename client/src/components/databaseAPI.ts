@@ -10,7 +10,7 @@ export const postSong = async (song: NowPlaying, color: HexColor): Promise<Song>
     const { artist, isPlaying: _isPlaying, ...rest } = song;
     const body = {
         ...rest,
-        artists: artist.split(',').map(a => a.trim()),
+        artists: artist.split(',').map((a) => a.trim()),
         color,
     };
 

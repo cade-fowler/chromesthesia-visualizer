@@ -1,54 +1,64 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @font-face {
-  font-family: "Helvetica Neue";
-  src: url("./assets/fonts/helvetica-neu.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
+    font-family: 'Helvetica Neue';
+    src: url('./assets/fonts/helvetica-neu.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
 }
 
 @font-face {
-  font-family: "Coolvetica";
-  src:
-    url("./assets/fonts/CoolveticaRg-Regular.woff2") format("woff2"),
-    url("./assets/fonts/CoolveticaRg-Regular.woff") format("woff");
-  font-weight: normal;
-  font-style: normal;
+    font-family: 'Coolvetica';
+    src:
+        url('./assets/fonts/CoolveticaRg-Regular.woff2') format('woff2'),
+        url('./assets/fonts/CoolveticaRg-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
 }
 
 /* Design tokens. Each one generates utilities, e.g. --color-medium -> bg-medium, text-medium */
 @theme {
-  --color-light: #f5f5f5;
-  --color-medium: #6b7a85;
-  --color-dark: #1c1c1c;
-  --color-accent: #44aef3;
-  --color-complement: #d3cfc4;
-  --color-spotify: #1ad861;
-  --color-panel: #1b202c;
+    --color-light: #f5f5f5;
+    --color-medium: #6b7a85;
+    --color-dark: #1c1c1c;
+    --color-accent: #44aef3;
+    --color-complement: #d3cfc4;
+    --color-spotify: #1ad861;
+    --color-panel: #1b202c;
 
-  --font-display: "Coolvetica", sans-serif;
-  --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-display: 'Coolvetica', sans-serif;
+    --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
-  --height-navbar: 60px;
+    --height-navbar: 60px;
 
-  /* Now-playing equalizer bars (animate-playing) */
-  --animate-playing: playing 2.2s ease infinite alternate;
-  @keyframes playing {
-    10% { transform: scaleY(0.25); }
-    30% { transform: scaleY(1); }
-    60% { transform: scaleY(0.5); }
-    80% { transform: scaleY(0.75); }
-    100% { transform: scaleY(0.5); }
-  }
+    /* Now-playing equalizer bars (animate-playing) */
+    --animate-playing: playing 2.2s ease infinite alternate;
+    @keyframes playing {
+        10% {
+            transform: scaleY(0.25);
+        }
+        30% {
+            transform: scaleY(1);
+        }
+        60% {
+            transform: scaleY(0.5);
+        }
+        80% {
+            transform: scaleY(0.75);
+        }
+        100% {
+            transform: scaleY(0.5);
+        }
+    }
 }
 
 @layer base {
-  body {
-    @apply antialiased;
-  }
+    body {
+        @apply antialiased;
+    }
 
-  input,
-  textarea {
-    font-family: var(--font-body);
-  }
+    input,
+    textarea {
+        font-family: var(--font-body);
+    }
 }
