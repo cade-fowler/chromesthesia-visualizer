@@ -13,7 +13,7 @@ const authorizationEndpoint = "https://accounts.spotify.com/authorize";
 export const currentToken = {
     get access_token() { return localStorage.getItem('access_token') || null; },
     get refresh_token() { return localStorage.getItem('refresh_token') || null; },
-    get expires_in() { return localStorage.getItem('refresh_in') || null },
+    get expires_in() { return localStorage.getItem('expires_in') || null },
     get expires() { return localStorage.getItem('expires') || null },
   
     save: function (response) {
@@ -59,86 +59,79 @@ export const login = async () => {
     window.location.href = authUrl.toString(); // Redirect the user to the authorization server for login
 }
 
-// Soptify API Calls
-export async function getToken(code) {
-    const code_verifier = localStorage.getItem('code_verifier');
-  
+export const logout = () => {
+    ['access_token', 'refresh_token', 'expires_in', 'expires', 'code_verifier']
+        .forEach(key => localStorage.removeItem(key));
+};
+
+const postToken = async (params) => {
     const response = await fetch(TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: clientId,
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: redirectUri,
-        code_verifier: code_verifier,
-      }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ client_id: clientId, ...params }),
     });
-  
-    return await response.json();
-  }
-  
-export async function refreshToken() {
-    const response = await fetch(TOKEN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        client_id: clientId,
-        grant_type: 'refresh_token',
-        refresh_token: currentToken.refresh_token
-      }),
-    });
-  
-    return await response.json();
-  }
+    const token = await response.json();
+    if (!response.ok || !token.access_token) {
+        throw new Error(token.error_description || 'Spotify token request failed');
+    }
+    currentToken.save(token);
+    return token;
+};
+
+// Exchange the ?code=... from the login redirect for tokens
+export const getToken = (code) => postToken({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: redirectUri,
+    code_verifier: localStorage.getItem('code_verifier'),
+});
+
+export const refreshToken = () => postToken({
+    grant_type: 'refresh_token',
+    refresh_token: currentToken.refresh_token,
+});
+
+// Returns a usable access token, refreshing it first if it has expired
+const getAccessToken = async () => {
+    if (!currentToken.access_token) return null;
+    const expires = currentToken.expires ? new Date(currentToken.expires) : null;
+    if (expires && expires.getTime() - Date.now() < 60_000) {
+        try {
+            await refreshToken();
+        } catch {
+            logout();
+            return null;
+        }
+    }
+    return currentToken.access_token;
+};
+
+const spotifyGet = async (url) => {
+    const token = await getAccessToken();
+    if (!token) return null;
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    // 204 = nothing playing
+    if (response.status === 204 || !response.ok) return null;
+    return response.json();
+};
 
 export const getUsername = async () => {
-    const response = await fetch(USER_ENDPOINT, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-    }).catch(err => console.log(err))
-
-    if (response.status === 204 || response.status > 400) {
-        return false
-    }
-
-    const user = await response.json()
-    return user.display_name
-}
-
-export const getNowPlaying = async () => {
-    return fetch(NOW_PLAYING_ENDPOINT, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-    })
-}
+    const user = await spotifyGet(USER_ENDPOINT);
+    return user?.display_name ?? '';
+};
 
 export const getNowPlayingItem = async () => {
-    const response = await getNowPlaying().catch(err => console.log(err))
-    if (response === undefined || response.status === 204 || response.status > 400) {
-        return false
-    }
-    const song = await response.json()
-    console.log(song)
-    const albumImageUrl = song.item.album.images[0].url
-    const artist = song.item.artists.map((_artist) => _artist.name).join(", ")
-    const isPlaying = song.is_playing
-    const songUrl = song.item.external_urls.spotify
-    const title = song.item.name
-    const id = song.item.id
-    
+    const playback = await spotifyGet(NOW_PLAYING_ENDPOINT);
+    // item is null for ads, and podcasts have no album/artists
+    const item = playback?.item;
+    if (!item || item.type !== 'track') return null;
+
     return {
-        albumImageUrl,
-        artist,
-        isPlaying,
-        songUrl,
-        title,
-        id
-    }
-}
+        albumImageUrl: item.album.images[0]?.url,
+        artist: item.artists.map(artist => artist.name).join(', '),
+        isPlaying: playback.is_playing,
+        songUrl: item.external_urls.spotify,
+        title: item.name,
+        id: item.id,
+    };
+};
