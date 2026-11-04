@@ -15,17 +15,21 @@ const ColorPickerElement = ({ color, onColorChange }: ColorPickerElementProps) =
     }
 
     return (
-        <div
-            style={style}
-            className="h-full w-full [&_.react-colorful]:h-4/5 [&_.react-colorful]:w-[90%] [&_.react-colorful]:p-[5%] [&_.react-colorful]:pb-0"
-        >
-            <HexColorPicker color={color} onChange={onColorChange} />
+        // Centers the picker + hex input as a group, both ways
+        <div style={style} className="flex h-full w-full flex-col items-center justify-center gap-2">
+            {/* react-colorful injects unlayered CSS (200px x 200px), which beats Tailwind's
+                layered utilities regardless of specificity, so the size needs `!` (important) */}
+            <HexColorPicker
+                color={color}
+                onChange={onColorChange}
+                className="h-4/5! w-[90%]!"
+            />
             <HexColorInput
                 color={color}
                 onChange={onColorChange}
                 style={style}
                 prefixed
-                className="ml-[5%] w-[90%] border-none text-center text-base outline-none"
+                className="w-[90%] border-none text-center text-base outline-none"
             />
         </div>
     )
