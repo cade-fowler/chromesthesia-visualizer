@@ -1,32 +1,26 @@
-import express from "express";
-import cors from 'cors';
-import bodyParser from 'body-parser';
 import "./loadEnvironment.mjs";
 import "express-async-errors";
+import express from "express";
 import songs from "./routes/songs.mjs";
 
 const PORT = process.env.PORT || 5050;
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 
-// parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded())
+app.use("/api/songs", songs);
 
-// parse application/json
-app.use(bodyParser.json())
-
-// Load the /songs routes
-app.use("/songs", songs);
+// Unknown API routes
+app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "Not found" });
+});
 
 // Global error handling
-app.use((err, _req, res, next) => {
-    console.log(err);
-    res.status(500).send("Uh oh. An error occured.")
-})
+app.use((err, _req, res, _next) => {
+    console.error(err);
+    res.status(500).json({ error: "Something went wrong" });
+});
 
-// start the Express server
 app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });

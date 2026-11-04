@@ -1,27 +1,25 @@
 export const getColors = async (id) => {
-    if (!id) return false;
-    
-    const url = `http://localhost:5050/songs/${id}/colors/`;
-    const response = await fetch(url)
-      .catch(err => console.error(err));
-    return response.json().catch(err => console.error("JSON ERROR"));
+    if (!id) return [];
+
+    const response = await fetch(`/api/songs/${id}/colors`);
+    if (!response.ok) return [];
+    return response.json();
 }
 
 export const postSong = async (song, color) => {
-    let newSong = song;
-    newSong.color = color
-    newSong.artists = song.artist.split(",")
-    delete newSong.artist
-    delete newSong.isPlaying
+    // Copy instead of mutating: `song` is React state owned by the caller.
+    const { artist, isPlaying, ...rest } = song;
+    const body = {
+        ...rest,
+        artists: artist.split(",").map(a => a.trim()),
+        color,
+    };
 
-    // TODO Make it so that each 
-
-    const response = await fetch('http://localhost:5050/songs/', {
+    const response = await fetch('/api/songs', {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newSong)
-    }).catch(err => console.error(err))
-    return response;
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`Saving color failed (${response.status})`);
+    return response.json();
 }
