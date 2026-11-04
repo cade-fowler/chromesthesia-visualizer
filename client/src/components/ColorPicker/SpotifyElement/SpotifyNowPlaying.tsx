@@ -24,7 +24,7 @@ const SpotifyNowPlaying = ({ song }: SpotifyNowPlayingProps) => {
                 <div className="flex rounded-[15px] border-[3px] border-medium">
                     {song.albumImageUrl && (
                         <img
-                            className="h-auto w-1/4 rounded-[18%] p-[5%]"
+                            className="box-content h-auto w-1/4 shrink-0 rounded-[18%] p-[5%]"
                             alt={`${song.title} album art`}
                             src={song.albumImageUrl}
                         />

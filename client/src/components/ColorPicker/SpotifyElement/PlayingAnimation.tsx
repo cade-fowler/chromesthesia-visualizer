@@ -9,7 +9,7 @@ const BAR_DELAYS = ['0s', '-2.2s', '-3.7s']
 const PlayingAnimation = ({ isPlaying }: PlayingAnimationProps) => {
     if (!isPlaying) return null
     return (
-        <div className="flex h-8 w-8 shrink-0 justify-between pr-[5%]" aria-hidden>
+        <div className="box-content flex h-8 w-8 shrink-0 justify-between pr-[5%]" aria-hidden>
             {BAR_DELAYS.map(delay => (
                 <span
                     key={delay}
