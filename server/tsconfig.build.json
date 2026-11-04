@@ -1,0 +1,5 @@
+{
+  // Production build: compile app code only (tsconfig.json also type-checks tests)
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts"]
+}

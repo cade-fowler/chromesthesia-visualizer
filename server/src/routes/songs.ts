@@ -6,6 +6,8 @@ import { songs } from "../db.js";
 
 const router = Router();
 
+type NoParams = Record<string, never>;
+
 // Accepts #rgb or #rrggbb in any case; stores lowercase #rrggbb so "#FFF" and "#ffffff" match
 const hexColor = z
     .string()
@@ -37,7 +39,7 @@ const listQuerySchema = z.object({
 const withoutMongoId = { projection: { _id: 0 } } as const;
 
 // List songs, optionally filtered by ?title= or ?artist=
-router.get<{}, Song[] | ApiError>("/", async (req, res) => {
+router.get<NoParams, Song[] | ApiError>("/", async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) return res.status(400).json({ error: "Invalid query" });
 
@@ -45,35 +47,35 @@ router.get<{}, Song[] | ApiError>("/", async (req, res) => {
     if (parsed.data.title) filter.title = parsed.data.title;
     if (parsed.data.artist) filter.artists = parsed.data.artist;
 
-    const results = await songs.find(filter, withoutMongoId).limit(50).toArray();
+    const results = await songs().find(filter, withoutMongoId).limit(50).toArray();
     res.json(results);
 });
 
 // Get one song by Spotify track id
 router.get<{ id: string }, Song | ApiError>("/:id", async (req, res) => {
-    const song = await songs.findOne({ id: req.params.id }, withoutMongoId);
+    const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
     if (!song) return res.status(404).json({ error: "Song not found" });
     res.json(song);
 });
 
 // Get the colors for one song
 router.get<{ id: string }, HexColor[] | ApiError>("/:id/colors", async (req, res) => {
-    const song = await songs.findOne({ id: req.params.id }, withoutMongoId);
+    const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
     if (!song) return res.status(404).json({ error: "Song not found" });
     res.json(song.colors ?? []);
 });
 
 // Add a color to a song, creating the song if it's new
-router.post<{}, Song | ApiError>("/", async (req, res) => {
+router.post<NoParams, Song | ApiError>("/", async (req, res) => {
     const parsed = addColorSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ error: z.prettifyError(parsed.error) });
     }
     const { color, ...song } = parsed.data;
-    const existed = (await songs.countDocuments({ id: song.id }, { limit: 1 })) > 0;
+    const existed = (await songs().countDocuments({ id: song.id }, { limit: 1 })) > 0;
 
     // Upsert: refresh the song's metadata and add the color if it isn't there yet
-    const updated = await songs.findOneAndUpdate(
+    const updated = await songs().findOneAndUpdate(
         { id: song.id },
         { $set: song, $addToSet: { colors: color } },
         { upsert: true, returnDocument: "after", ...withoutMongoId },

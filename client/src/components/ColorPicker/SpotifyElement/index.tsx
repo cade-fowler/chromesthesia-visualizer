@@ -21,7 +21,8 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
     const [loggedIn, setLoggedIn] = useState(Boolean(currentToken.access_token))
     const [username, setUsername] = useState('')
     const [currentSong, setCurrentSong] = useState<NowPlaying | null>(null)
-    const [colors, setColors] = useState<HexColor[]>([])
+    // Colors are stored with the song they were loaded for, so a stale list is never shown
+    const [loadedColors, setLoadedColors] = useState<{ songId: string; colors: HexColor[] } | null>(null)
     const [saving, setSaving] = useState(false)
     const exchangedCode = useRef(false)
 
@@ -74,14 +75,14 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
     // Load saved colors whenever the song changes
     const songId = currentSong?.id
     useEffect(() => {
-        if (!songId) {
-            setColors([])
-            return
-        }
+        if (!songId) return
         let cancelled = false
-        getColors(songId).then(c => { if (!cancelled) setColors(c) })
+        getColors(songId).then(colors => {
+            if (!cancelled) setLoadedColors({ songId, colors })
+        })
         return () => { cancelled = true }
     }, [songId])
+    const colors = loadedColors && loadedColors.songId === songId ? loadedColors.colors : []
 
     const handleLogout = () => {
         logout()
@@ -95,7 +96,7 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
         setSaving(true)
         try {
             const saved = await postSong(currentSong, color)
-            setColors(saved.colors ?? [])
+            setLoadedColors({ songId: saved.id, colors: saved.colors ?? [] })
         } catch (err) {
             console.error(err)
         } finally {
