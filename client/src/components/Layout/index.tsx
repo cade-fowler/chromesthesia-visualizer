@@ -1,24 +1,13 @@
-import './index.scss'
-import Navbar from '../Navbar'
 import { Outlet } from 'react-router-dom'
+import Navbar from '../Navbar'
 
-const Layout = () => {
-    return (
-    <div className='App'>
+const Layout = () => (
+    <div className="h-screen">
         <Navbar />
-        <div className='page'>
-            <span className='tags top-tags'>  </span>
+        <main className="h-[calc(100vh-var(--height-navbar))]">
             <Outlet />
-            <span className='tags bottom-tags'>
-                
-                <br />
-                <span className='bottom-tag-html'>
-                    
-                </span>
-            </span>
-        </div>
+        </main>
     </div>
-    )
-}
+)
 
 export default Layout

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@chromesthesia/shared": "*",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
@@ -12,8 +13,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
     "sass": "^1.77.4",
-    "styled-components": "^6.1.11",
-    "@chromesthesia/shared": "*"
+    "styled-components": "^6.1.11"
   },
   "scripts": {
     "dev": "vite",
@@ -22,9 +22,11 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.4",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.2.1",
+    "tailwindcss": "^4.3.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   },
