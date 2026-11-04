@@ -1,7 +1,5 @@
-import React from 'react';
-
 const SpotifyLogo = () => (
-    <svg width="20px" x="0px" y="0px" viewBox="0 0 20 20" style={{ enableBackground: "new 0 0 20 20" }}>
+    <svg width="20px" x="0px" y="0px" viewBox="0 0 20 20">
         <g>
             <g>
                 <g>

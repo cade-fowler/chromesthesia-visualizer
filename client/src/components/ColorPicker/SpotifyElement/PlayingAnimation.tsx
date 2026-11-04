@@ -1,21 +1,20 @@
-import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
-const PlayingAnimation = (props) => {
-    return(
-        <>
-            {props.isPlaying && 
-                <div className="playing-animation">
-                    <Playing>
-                        <span />
-                        <span />
-                        <span />
-                    </Playing>  
-                </div>
-                
-            }
-        </>
-    )
+interface PlayingAnimationProps {
+    isPlaying: boolean;
+}
+
+const PlayingAnimation = ({ isPlaying }: PlayingAnimationProps) => {
+    if (!isPlaying) return null;
+    return (
+        <div className="playing-animation">
+            <Playing>
+                <span />
+                <span />
+                <span />
+            </Playing>
+        </div>
+    );
 };
 
 export default PlayingAnimation;
