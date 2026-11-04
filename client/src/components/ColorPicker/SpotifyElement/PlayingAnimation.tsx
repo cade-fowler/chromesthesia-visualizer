@@ -1,69 +1,24 @@
-import styled, { keyframes } from 'styled-components';
-
 interface PlayingAnimationProps {
-    isPlaying: boolean;
+    isPlaying: boolean
 }
 
+// Bar delays offset each bar's place in the shared `playing` keyframes
+const BAR_DELAYS = ['0s', '-2.2s', '-3.7s']
+
+/** Three bouncing equalizer bars, shown while a song is playing. */
 const PlayingAnimation = ({ isPlaying }: PlayingAnimationProps) => {
-    if (!isPlaying) return null;
+    if (!isPlaying) return null
     return (
-        <div className="playing-animation">
-            <Playing>
-                <span />
-                <span />
-                <span />
-            </Playing>
+        <div className="flex h-8 w-8 shrink-0 justify-between pr-[5%]" aria-hidden>
+            {BAR_DELAYS.map(delay => (
+                <span
+                    key={delay}
+                    className="h-full w-1/4 origin-bottom animate-playing rounded-[3px] bg-[#1ed760]"
+                    style={{ animationDelay: delay }}
+                />
+            ))}
         </div>
-    );
-};
+    )
+}
 
-export default PlayingAnimation;
-
-const Animation = keyframes`
-    10% {
-    transform: scaleY(0.25);
-  }
-
-  30% {
-    transform: scaleY(1);
-  }
-
-  60% {
-    transform: scaleY(0.5);
-  }
-
-  80% {
-    transform: scaleY(0.75);
-  }
-
-  100% {
-    transform: scaleY(0.5);
-  }
-`;
-
-const Playing = styled.div`
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    width: 2rem;
-    height: 2rem;
-  
-    span {
-        width: 25%;
-        height: 100%;
-        background-color: #1ED760;
-        border-radius: 3px;
-        animation: ${Animation} 2.2s ease infinite alternate;
-        content: '';
-        transform-origin: bottom;
-
-        &:nth-of-type(2) {
-            animation-delay: -2.2s;
-        }
-    
-        &:nth-of-type(3) {
-            animation-delay: -3.7s;
-        }
-        
-    }
-`;
+export default PlayingAnimation

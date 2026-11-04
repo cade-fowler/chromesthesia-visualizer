@@ -1,8 +1,7 @@
 import { faSpotify } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import PlayingAnimation from './PlayingAnimation'
 import type { NowPlaying } from '@chromesthesia/shared'
-import './index.scss'
+import PlayingAnimation from './PlayingAnimation'
 
 interface SpotifyNowPlayingProps {
     song: NowPlaying | null
@@ -12,25 +11,37 @@ const SpotifyNowPlaying = ({ song }: SpotifyNowPlayingProps) => {
     const isPlaying = song?.isPlaying ?? false
 
     return (
-        <div className="player">
-            <div className="status">
-                <div className="logo">
-                    <FontAwesomeIcon icon={faSpotify} color='#1ad861' />
+        <div className="mx-[5%] max-w-[90%] font-body">
+            <div className="flex items-center">
+                <div className="p-[2%] text-[4rem]">
+                    <FontAwesomeIcon icon={faSpotify} className="text-spotify" />
                 </div>
-                <p className="status-text">{isPlaying ? 'Now playing' : 'Currently offline'}</p>
+                <p className="w-full py-[5%] pr-[5%] text-[2.5rem] font-bold text-light">
+                    {isPlaying ? 'Now playing' : 'Currently offline'}
+                </p>
             </div>
             {song && (
-                <div className="song-box">
-                    <img className="album-art"
-                        alt={`${song.title} album art`}
-                        src={song.albumImageUrl}
-                    />
-                    <div className="song-info">
-                        <div className="top-line">
+                <div className="flex rounded-[15px] border-[3px] border-medium">
+                    {song.albumImageUrl && (
+                        <img
+                            className="h-auto w-1/4 rounded-[18%] p-[5%]"
+                            alt={`${song.title} album art`}
+                            src={song.albumImageUrl}
+                        />
+                    )}
+                    <div className="flex w-full flex-col justify-evenly py-[8%]">
+                        <div className="flex pr-[5%] text-[2rem]">
                             <PlayingAnimation isPlaying={isPlaying} />
-                            <a className="song-name" href={song.songUrl} target="_blank" rel="noopener noreferrer">{song.title}</a>
+                            <a
+                                className="grow font-bold text-light no-underline"
+                                href={song.songUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {song.title}
+                            </a>
                         </div>
-                        <p className="artist-name">{song.artist}</p>
+                        <p className="text-[1.5rem] text-medium">{song.artist}</p>
                     </div>
                 </div>
             )}

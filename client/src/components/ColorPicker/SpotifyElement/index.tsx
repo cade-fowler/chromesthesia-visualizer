@@ -1,4 +1,3 @@
-import './index.scss'
 import { useEffect, useRef, useState } from 'react'
 import SpotifyNowPlaying from './SpotifyNowPlaying'
 import ColorSwatch from './ColorSwatch/ColorSwatch'
@@ -7,6 +6,11 @@ import { login, logout, getToken, getUsername, getNowPlayingItem, currentToken }
 import type { HexColor, NowPlaying } from '@chromesthesia/shared'
 
 const POLL_INTERVAL_MS = 5000
+
+const buttonClass =
+    'm-2 rounded-[5px] border-[3px] border-medium p-2 text-xl text-medium transition-colors ' +
+    'hover:bg-medium hover:text-dark disabled:cursor-not-allowed disabled:opacity-50 ' +
+    'disabled:hover:bg-transparent disabled:hover:text-medium'
 
 interface SpotifyElementProps {
     /** The color currently selected in the picker */
@@ -100,12 +104,12 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
     }
 
     return (
-        <div className='spotify'>
-            {username ? `Hi, ${username}` : 'Not connected to Spotify'}
-            <div className="login-out">
+        <div className="h-full w-full overflow-y-auto bg-panel p-[5%] text-white">
+            <div className="flex items-center justify-between">
+                <span>{username ? `Hi, ${username}` : 'Not connected to Spotify'}</span>
                 {loggedIn
-                    ? <button onClick={handleLogout}>Logout</button>
-                    : <button onClick={login}>Login</button>
+                    ? <button onClick={handleLogout} className={buttonClass}>Logout</button>
+                    : <button onClick={login} className={buttonClass}>Login</button>
                 }
             </div>
             <SpotifyNowPlaying song={currentSong} />
@@ -115,15 +119,13 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                     : <div>No colors have been set for this song.</div>
                 }
             </div>
-            <div>
-                <button
-                    onClick={handleSave}
-                    disabled={!currentSong || saving}
-                    className='main-button'
-                >
-                    {saving ? 'Saving…' : 'Save'}
-                </button>
-            </div>
+            <button
+                onClick={handleSave}
+                disabled={!currentSong || saving}
+                className={buttonClass}
+            >
+                {saving ? 'Saving…' : 'Save'}
+            </button>
         </div>
     )
 }

@@ -1,4 +1,3 @@
-import './index.scss'
 
 const DatabaseExplorer = () => {
     return (
