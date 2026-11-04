@@ -2,13 +2,10 @@ import './index.scss'
 import ColorPickerElement from './ColorPickerElement'
 import SpotifyElement from './SpotifyElement'
 import { useState } from 'react'
+import type { HexColor } from '../../types'
 
 const ColorPicker = () => {
-    // const saveColor = (color) => {
-    //     console.log(color);
-    // }
-
-    const [currentColor, setCurrentColor] = useState('#FFFFFF');
+    const [currentColor, setCurrentColor] = useState<HexColor>('#ffffff');
 
     return (
         <div className='container'>
@@ -21,7 +18,6 @@ const ColorPicker = () => {
                     onColorChange={setCurrentColor}    
                 />
             </div>
-            {/* <div>{currentColor}</div> */}
         </div>
         
     )

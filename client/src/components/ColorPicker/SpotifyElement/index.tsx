@@ -4,15 +4,20 @@ import SpotifyNowPlaying from './SpotifyNowPlaying'
 import ColorSwatch from './ColorSwatch/ColorSwatch'
 import { getColors, postSong } from '../../databaseAPI'
 import { login, logout, getToken, getUsername, getNowPlayingItem, currentToken } from './SpotifyAPI'
+import type { HexColor, NowPlaying } from '../../../types'
 
 const POLL_INTERVAL_MS = 5000
-const NO_SONG = { id: null, isPlaying: false }
 
-const SpotifyElement = (props) => {
+interface SpotifyElementProps {
+    /** The color currently selected in the picker */
+    color: HexColor
+}
+
+const SpotifyElement = ({ color }: SpotifyElementProps) => {
     const [loggedIn, setLoggedIn] = useState(Boolean(currentToken.access_token))
     const [username, setUsername] = useState('')
-    const [currentSong, setCurrentSong] = useState(NO_SONG)
-    const [colors, setColors] = useState([])
+    const [currentSong, setCurrentSong] = useState<NowPlaying | null>(null)
+    const [colors, setColors] = useState<HexColor[]>([])
     const [saving, setSaving] = useState(false)
     const exchangedCode = useRef(false)
 
@@ -51,7 +56,7 @@ const SpotifyElement = (props) => {
                 setLoggedIn(false) // refresh failed, tokens were cleared
                 return
             }
-            setCurrentSong(song ?? NO_SONG)
+            setCurrentSong(song)
         }
 
         poll()
@@ -63,27 +68,29 @@ const SpotifyElement = (props) => {
     }, [loggedIn])
 
     // Load saved colors whenever the song changes
+    const songId = currentSong?.id
     useEffect(() => {
-        if (!currentSong.id) {
+        if (!songId) {
             setColors([])
             return
         }
         let cancelled = false
-        getColors(currentSong.id).then(c => { if (!cancelled) setColors(c) })
+        getColors(songId).then(c => { if (!cancelled) setColors(c) })
         return () => { cancelled = true }
-    }, [currentSong.id])
+    }, [songId])
 
     const handleLogout = () => {
         logout()
         setLoggedIn(false)
         setUsername('')
-        setCurrentSong(NO_SONG)
+        setCurrentSong(null)
     }
 
     const handleSave = async () => {
+        if (!currentSong) return
         setSaving(true)
         try {
-            const saved = await postSong(currentSong, props.color)
+            const saved = await postSong(currentSong, color)
             setColors(saved.colors ?? [])
         } catch (err) {
             console.error(err)
@@ -111,7 +118,7 @@ const SpotifyElement = (props) => {
             <div>
                 <button
                     onClick={handleSave}
-                    disabled={!currentSong.id || saving}
+                    disabled={!currentSong || saving}
                     className='main-button'
                 >
                     {saving ? 'Saving…' : 'Save'}

@@ -13,9 +13,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
 
-    // Temporary while files are converted; .js/.jsx files are allowed but not checked
-    "allowJs": true,
-
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
