@@ -4,6 +4,7 @@ import ColorSwatch from './ColorSwatch/ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
 import { buttonClass } from './buttons';
 import usePlaybackPosition from '../../../hooks/usePlaybackPosition';
+import Timeline from '../../Timeline';
 import { deleteColor, getColors, saveColor } from '../../databaseAPI';
 import { insertInSongOrder } from '../../../utils/colorOrder';
 import {
@@ -139,6 +140,13 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                 )}
             </div>
             <SpotifyNowPlaying song={currentSong} />
+            {currentSong && (
+                <Timeline
+                    entries={colors}
+                    durationMs={currentSong.durationMs}
+                    positionMs={positionMs}
+                />
+            )}
             {/* Keyed by song so a new song starts with an empty form. The part stays filled in
                 after saving, so several colors can go on the same part. */}
             <ColorEntryForm
