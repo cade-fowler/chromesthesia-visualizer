@@ -1,78 +1,75 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createApp } from '../app.js';
-import { connectDb, disconnectDb, songs } from '../db.js';
+import { colors, songs } from '../db.js';
+import { useTestDb } from '../test/db.js';
 
-let mongo: MongoMemoryServer;
+useTestDb();
 const app = createApp();
 
+const id = '1XZPtZVqcOzzxbYIR7MjQw';
 const song = {
-    id: '1XZPtZVqcOzzxbYIR7MjQw',
     title: 'Ontario',
     artists: ['Novo Amor', 'Lowswimmer'],
     songUrl: 'https://open.spotify.com/track/1XZPtZVqcOzzxbYIR7MjQw',
     albumImageUrl: 'https://i.scdn.co/image/abc',
 };
 
-beforeAll(async () => {
-    mongo = await MongoMemoryServer.create();
-    await connectDb(mongo.getUri(), 'test');
-});
+const putSong = (body: object = song, songId = id) =>
+    request(app).put(`/api/songs/${songId}`).send(body);
+const addColor = (body: object, songId = id) =>
+    request(app).post(`/api/songs/${songId}/colors`).send(body);
 
-afterAll(async () => {
-    await disconnectDb();
-    await mongo.stop();
-});
-
-beforeEach(async () => {
-    await songs().deleteMany({});
-});
-
-describe('POST /api/songs', () => {
-    it('creates a song with its first color', async () => {
-        const res = await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#ff0000' });
+describe('PUT /api/songs/:id', () => {
+    it('creates a song with 201', async () => {
+        const res = await putSong();
 
         expect(res.status).toBe(201);
-        expect(res.body).toEqual({ ...song, colors: ['#ff0000'] });
+        expect(res.body).toEqual({ id, ...song });
         expect(res.body).not.toHaveProperty('_id');
     });
 
-    it('adds a color to an existing song without duplicating it', async () => {
-        await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#ff0000' });
-        await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#00ff00' });
-        const res = await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#00ff00' });
+    it('updates an existing song with 200 without duplicating it', async () => {
+        await putSong();
+        const res = await putSong({ ...song, title: 'Ontario (Remastered)' });
 
         expect(res.status).toBe(200);
-        expect(res.body.colors).toEqual(['#ff0000', '#00ff00']);
+        expect(res.body.title).toBe('Ontario (Remastered)');
         expect(await songs().countDocuments()).toBe(1);
     });
 
-    it('normalizes colors to lowercase #rrggbb', async () => {
-        await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#F00' });
-        const res = await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#FF0000' });
+    it('removes albumImageUrl when it is no longer sent', async () => {
+        await putSong();
+        await putSong({ ...song, albumImageUrl: undefined });
 
-        expect(res.body.colors).toEqual(['#ff0000']);
+        expect(await songs().findOne({ id })).not.toHaveProperty('albumImageUrl');
+    });
+
+    it('keeps notes when a save leaves them out, and clears them with []', async () => {
+        await putSong({ ...song, notes: ['glossy'] });
+        const res = await putSong();
+        expect(res.body.notes).toEqual(['glossy']);
+
+        await putSong({ ...song, notes: [] });
+        expect((await songs().findOne({ id }))?.notes).toEqual([]);
+    });
+
+    it('rejects invalid song notes with 400', async () => {
+        const res = await putSong({ ...song, notes: ['glossy', ' glossy '] });
+        expect(res.status).toBe(400);
+    });
+
+    it('enforces one document per song id', async () => {
+        await putSong();
+        await expect(songs().insertOne({ id, ...song })).rejects.toThrow(/duplicate key/);
     });
 
     it.each([
-        ['an invalid color', { ...song, color: 'red' }],
-        ['a missing title', { ...song, title: undefined, color: '#ff0000' }],
-        ['a non-URL songUrl', { ...song, songUrl: 'nope', color: '#ff0000' }],
+        ['a missing title', { ...song, title: undefined }],
+        ['a non-URL songUrl', { ...song, songUrl: 'nope' }],
+        ['non-array artists', { ...song, artists: 'Novo Amor' }],
     ])('rejects %s with 400', async (_label, body) => {
-        const res = await request(app).post('/api/songs').send(body);
+        const res = await putSong(body);
 
         expect(res.status).toBe(400);
         expect(res.body.error).toEqual(expect.any(String));
@@ -81,50 +78,163 @@ describe('POST /api/songs', () => {
 
     it('rejects malformed JSON with 400', async () => {
         const res = await request(app)
-            .post('/api/songs')
+            .put(`/api/songs/${id}`)
             .set('Content-Type', 'application/json')
-            .send('{"id":');
+            .send('{"title":');
 
         expect(res.status).toBe(400);
         expect(res.body).toEqual({ error: 'Invalid JSON body' });
     });
 });
 
-describe('GET /api/songs', () => {
-    beforeEach(async () => {
-        await request(app)
-            .post('/api/songs')
-            .send({ ...song, color: '#ff0000' });
-        await request(app)
-            .post('/api/songs')
-            .send({ ...song, id: 'other', title: 'Other', artists: ['Someone'], color: '#0000ff' });
+describe('POST /api/songs/:id/colors', () => {
+    it('adds a color entry with 201', async () => {
+        await putSong();
+        const res = await addColor({ color: '#ff0000' });
+
+        expect(res.status).toBe(201);
+        expect(res.body).toEqual({
+            id: expect.stringMatching(/^[0-9a-f]{24}$/),
+            songId: id,
+            color: '#ff0000',
+            createdAt: expect.any(String),
+        });
+        expect(new Date(res.body.createdAt).toISOString()).toBe(res.body.createdAt);
+        expect(await colors().countDocuments({ songId: id })).toBe(1);
     });
 
-    it('gets one song by id', async () => {
-        const res = await request(app).get(`/api/songs/${song.id}`);
-        expect(res.status).toBe(200);
-        expect(res.body.title).toBe('Ontario');
+    it('stores a song part with its range, label and notes', async () => {
+        await putSong();
+        const part = {
+            color: '#00ff00',
+            startMs: 1000,
+            endMs: 5000,
+            label: 'chorus',
+            notes: ['glossy'],
+        };
+        const res = await addColor(part);
+
+        expect(res.status).toBe(201);
+        expect(res.body).toMatchObject(part);
     });
 
-    it("gets a song's colors", async () => {
-        const res = await request(app).get(`/api/songs/${song.id}/colors`);
-        expect(res.body).toEqual(['#ff0000']);
+    it('keeps duplicate colors as separate entries', async () => {
+        await putSong();
+        await addColor({ color: '#ff0000' });
+        await addColor({ color: '#ff0000' });
+
+        expect(await colors().countDocuments({ songId: id })).toBe(2);
+    });
+
+    it('normalizes colors to lowercase #rrggbb', async () => {
+        await putSong();
+        const res = await addColor({ color: '#F0A' });
+
+        expect(res.body.color).toBe('#ff00aa');
     });
 
     it('returns 404 for an unknown song', async () => {
-        const res = await request(app).get('/api/songs/missing');
+        const res = await addColor({ color: '#ff0000' }, 'missing');
+
         expect(res.status).toBe(404);
+        expect(await colors().countDocuments()).toBe(0);
+    });
+
+    it.each([
+        ['an invalid color', { color: 'red' }],
+        ['startMs without endMs', { color: '#fff', startMs: 1000 }],
+        ['endMs without startMs', { color: '#fff', endMs: 1000 }],
+        ['endMs before startMs', { color: '#fff', startMs: 5000, endMs: 1000 }],
+        ['an empty range', { color: '#fff', startMs: 1000, endMs: 1000 }],
+        ['a negative startMs', { color: '#fff', startMs: -1, endMs: 1000 }],
+        ['a fractional endMs', { color: '#fff', startMs: 0, endMs: 1.5 }],
+        ['a blank label', { color: '#fff', label: '   ' }],
+        ['a label over 50 chars', { color: '#fff', label: 'x'.repeat(51) }],
+        ['a blank note', { color: '#fff', notes: [' '] }],
+        ['a note over 200 chars', { color: '#fff', notes: ['x'.repeat(201)] }],
+        ['repeated notes', { color: '#fff', notes: ['glossy', 'glossy'] }],
+        ['a string instead of a notes list', { color: '#fff', notes: 'glossy' }],
+    ])('rejects %s with 400', async (_label, body) => {
+        await putSong();
+        const res = await addColor(body);
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toEqual(expect.any(String));
+        expect(await colors().countDocuments()).toBe(0);
+    });
+});
+
+describe('GET /api/songs', () => {
+    const otherId = 'other';
+
+    const seed = async () => {
+        await putSong();
+        await putSong({ ...song, title: 'Other', artists: ['Someone'] }, otherId);
+        await addColor({ color: '#ff0000' });
+        await addColor({ color: '#00ff00', startMs: 0, endMs: 1000 });
+        await addColor({ color: '#0000ff' }, otherId);
+    };
+
+    it('gets one song by id with its colors, oldest first', async () => {
+        await seed();
+        const res = await request(app).get(`/api/songs/${id}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ id, ...song });
+        expect(res.body.colors.map((c: { color: string }) => c.color)).toEqual([
+            '#ff0000',
+            '#00ff00',
+        ]);
+    });
+
+    it("gets a song's colors, oldest first", async () => {
+        await seed();
+        const res = await request(app).get(`/api/songs/${id}/colors`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.map((c: { color: string }) => c.color)).toEqual(['#ff0000', '#00ff00']);
+    });
+
+    it('returns an empty list for a song with no colors', async () => {
+        await putSong();
+        const res = await request(app).get(`/api/songs/${id}/colors`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([]);
+    });
+
+    it('returns 404 for an unknown song', async () => {
+        expect((await request(app).get('/api/songs/missing')).status).toBe(404);
+        expect((await request(app).get('/api/songs/missing/colors')).status).toBe(404);
+    });
+
+    it('lists songs without embedding colors', async () => {
+        await seed();
+        const res = await request(app).get('/api/songs');
+
+        expect(res.body).toHaveLength(2);
+        expect(res.body[0]).not.toHaveProperty('colors');
+        expect(res.body[0]).not.toHaveProperty('_id');
     });
 
     it('filters the list by artist', async () => {
+        await seed();
         const res = await request(app).get('/api/songs').query({ artist: 'Lowswimmer' });
-        expect(res.body.map((s: { id: string }) => s.id)).toEqual([song.id]);
+
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual([id]);
     });
 
     it('rejects Mongo operators in query params', async () => {
         const res = await request(app).get('/api/songs?title[$ne]=x');
         expect(res.status).toBe(400);
     });
+});
+
+it('no longer accepts POST /api/songs', async () => {
+    const res = await request(app)
+        .post('/api/songs')
+        .send({ id, ...song, color: '#ff0000' });
+    expect(res.status).toBe(404);
 });
 
 it('returns JSON 404 for unknown API routes', async () => {

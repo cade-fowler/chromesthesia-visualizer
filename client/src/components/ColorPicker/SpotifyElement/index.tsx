@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from './ColorSwatch/ColorSwatch';
-import { getColors, postSong } from '../../databaseAPI';
+import { getColors, saveColor } from '../../databaseAPI';
 import {
     login,
     logout,
@@ -10,7 +10,7 @@ import {
     getNowPlayingItem,
     currentToken,
 } from './SpotifyAPI';
-import type { HexColor, NowPlaying } from '@chromesthesia/shared';
+import type { ColorEntry, HexColor, NowPlaying } from '@chromesthesia/shared';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -29,9 +29,10 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
     const [username, setUsername] = useState('');
     const [currentSong, setCurrentSong] = useState<NowPlaying | null>(null);
     // Colors are stored with the song they were loaded for, so a stale list is never shown
-    const [loadedColors, setLoadedColors] = useState<{ songId: string; colors: HexColor[] } | null>(
-        null,
-    );
+    const [loadedColors, setLoadedColors] = useState<{
+        songId: string;
+        colors: ColorEntry[];
+    } | null>(null);
     const [saving, setSaving] = useState(false);
     const exchangedCode = useRef(false);
 
@@ -106,8 +107,11 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
         if (!currentSong) return;
         setSaving(true);
         try {
-            const saved = await postSong(currentSong, color);
-            setLoadedColors({ songId: saved.id, colors: saved.colors ?? [] });
+            const saved = await saveColor(currentSong, color);
+            setLoadedColors((prev) => ({
+                songId: saved.songId,
+                colors: prev?.songId === saved.songId ? [...prev.colors, saved] : [saved],
+            }));
         } catch (err) {
             console.error(err);
         } finally {
@@ -132,7 +136,7 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
             <SpotifyNowPlaying song={currentSong} />
             <div className="flex w-full flex-wrap pt-[3%]">
                 {colors.length > 0 ? (
-                    colors.map((color) => <ColorSwatch color={color} key={color} />)
+                    colors.map((entry) => <ColorSwatch color={entry.color} key={entry.id} />)
                 ) : (
                     <div>No colors have been set for this song.</div>
                 )}

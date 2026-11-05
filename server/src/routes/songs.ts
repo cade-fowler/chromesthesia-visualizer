@@ -1,40 +1,25 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Filter } from 'mongodb';
-import type { AddColorRequest, ApiError, HexColor, Song } from '@chromesthesia/shared';
-import { songs } from '../db.js';
+import { ObjectId } from 'mongodb';
+import type { ApiError, ColorEntry, Song, SongWithColors } from '@chromesthesia/shared';
+import { colors, songs, toColorEntry } from '../db.js';
+import { addColorSchema, listQuerySchema, upsertSongSchema } from '../validation.js';
 
 const router = Router();
 
 type NoParams = Record<string, never>;
-
-// Accepts #rgb or #rrggbb in any case; stores lowercase #rrggbb so "#FFF" and "#ffffff" match
-const hexColor = z
-    .string()
-    .regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i, 'Expected a color like #ff8800')
-    .transform((hex) => {
-        const digits = hex.slice(1).toLowerCase();
-        return digits.length === 3 ? `#${[...digits].map((d) => d + d).join('')}` : `#${digits}`;
-    });
-
-const addColorSchema = z.object({
-    id: z.string().min(1),
-    title: z.string().min(1),
-    artists: z.array(z.string()),
-    albumImageUrl: z.url().optional(),
-    songUrl: z.url(),
-    color: hexColor,
-}) satisfies z.ZodType<AddColorRequest>;
-
-// Only these query params are passed through to Mongo, and only as plain strings.
-// Passing req.query straight to find() would let ?field[$ne]=x inject operators.
-const listQuerySchema = z.object({
-    title: z.string().optional(),
-    artist: z.string().optional(),
-});
+type IdParams = { id: string };
 
 // Don't leak Mongo's _id; the Spotify track id is the public identifier
 const withoutMongoId = { projection: { _id: 0 } } as const;
+
+const songExists = async (id: string) => (await songs().countDocuments({ id }, { limit: 1 })) > 0;
+
+const colorsFor = async (songId: string): Promise<ColorEntry[]> => {
+    const docs = await colors().find({ songId }).sort({ createdAt: 1, _id: 1 }).toArray();
+    return docs.map(toColorEntry);
+};
 
 // List songs, optionally filtered by ?title= or ?artist=
 router.get<NoParams, Song[] | ApiError>('/', async (req, res) => {
@@ -49,41 +34,58 @@ router.get<NoParams, Song[] | ApiError>('/', async (req, res) => {
     res.json(results);
 });
 
-// Get one song by Spotify track id
-router.get<{ id: string }, Song | ApiError>('/:id', async (req, res) => {
+// Get one song by Spotify track id, with its colors
+router.get<IdParams, SongWithColors | ApiError>('/:id', async (req, res) => {
     const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
     if (!song) return res.status(404).json({ error: 'Song not found' });
-    res.json(song);
+    res.json({ ...song, colors: await colorsFor(song.id) });
 });
 
-// Get the colors for one song
-router.get<{ id: string }, HexColor[] | ApiError>('/:id/colors', async (req, res) => {
-    const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
-    if (!song) return res.status(404).json({ error: 'Song not found' });
-    res.json(song.colors ?? []);
+// Create or update a song's metadata (owner-only once auth lands)
+router.put<IdParams, Song | ApiError>('/:id', async (req, res) => {
+    const parsed = upsertSongSchema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json({ error: z.prettifyError(parsed.error) });
+    }
+    const song: Song = { id: req.params.id, ...parsed.data };
+
+    // $set only touches the given fields, so drop an albumImageUrl the client no longer sends
+    const update =
+        song.albumImageUrl === undefined
+            ? { $set: song, $unset: { albumImageUrl: '' as const } }
+            : { $set: song };
+    const result = await songs().updateOne({ id: song.id }, update, { upsert: true });
+    // Read it back: notes the request left out are kept, so the body isn't the whole song
+    const saved = await songs().findOne({ id: song.id }, withoutMongoId);
+    res.status(result.upsertedCount ? 201 : 200).json(saved!);
 });
 
-// Add a color to a song, creating the song if it's new
-router.post<NoParams, Song | ApiError>('/', async (req, res) => {
+// Get the colors for one song, oldest first
+router.get<IdParams, ColorEntry[] | ApiError>('/:id/colors', async (req, res) => {
+    if (!(await songExists(req.params.id))) {
+        return res.status(404).json({ error: 'Song not found' });
+    }
+    res.json(await colorsFor(req.params.id));
+});
+
+// Assign a color to a song or part of it (owner-only once auth lands)
+router.post<IdParams, ColorEntry | ApiError>('/:id/colors', async (req, res) => {
     const parsed = addColorSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ error: z.prettifyError(parsed.error) });
     }
-    const { color, ...song } = parsed.data;
-    const existed = (await songs().countDocuments({ id: song.id }, { limit: 1 })) > 0;
+    if (!(await songExists(req.params.id))) {
+        return res.status(404).json({ error: 'Song not found' });
+    }
 
-    // Upsert: refresh the song's metadata and add the color if it isn't there yet
-    const updated = await songs().findOneAndUpdate(
-        { id: song.id },
-        { $set: song, $addToSet: { colors: color } },
-        { upsert: true, returnDocument: 'after', ...withoutMongoId },
-    );
-    res.status(existed ? 200 : 201).json(updated!);
-});
-
-// TODO: remove a color from a song
-router.delete('/:id', (_req, res) => {
-    res.status(501).json({ error: 'Not implemented' });
+    const doc = {
+        _id: new ObjectId(),
+        songId: req.params.id,
+        ...parsed.data,
+        createdAt: new Date(),
+    };
+    await colors().insertOne(doc);
+    res.status(201).json(toColorEntry(doc));
 });
 
 export default router;
