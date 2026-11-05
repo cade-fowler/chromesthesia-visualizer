@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from './ColorSwatch/ColorSwatch';
+import ColorEntryForm from './ColorEntryForm';
+import { buttonClass } from './buttons';
+import usePlaybackPosition from '../../../hooks/usePlaybackPosition';
 import { deleteColor, getColors, saveColor } from '../../databaseAPI';
 import { insertInSongOrder } from '../../../utils/colorOrder';
 import {
@@ -11,14 +14,9 @@ import {
     getNowPlayingItem,
     currentToken,
 } from './SpotifyAPI';
-import type { ColorEntry, HexColor, NowPlaying } from '@chromesthesia/shared';
+import type { AddColorRequest, ColorEntry, HexColor, NowPlaying } from '@chromesthesia/shared';
 
 const POLL_INTERVAL_MS = 5000;
-
-const buttonClass =
-    'm-2 rounded-[5px] border-[3px] border-medium p-2 text-xl text-medium transition-colors ' +
-    'hover:bg-medium hover:text-dark disabled:cursor-not-allowed disabled:opacity-50 ' +
-    'disabled:hover:bg-transparent disabled:hover:text-medium';
 
 interface SpotifyElementProps {
     /** The color currently selected in the picker */
@@ -29,12 +27,13 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
     const [loggedIn, setLoggedIn] = useState(Boolean(currentToken.access_token));
     const [username, setUsername] = useState('');
     const [currentSong, setCurrentSong] = useState<NowPlaying | null>(null);
+    // When currentSong was fetched, so the playback position can count forward between polls
+    const [polledAt, setPolledAt] = useState(0);
     // Colors are stored with the song they were loaded for, so a stale list is never shown
     const [loadedColors, setLoadedColors] = useState<{
         songId: string;
         colors: ColorEntry[];
     } | null>(null);
-    const [saving, setSaving] = useState(false);
     const exchangedCode = useRef(false);
 
     // Handle the redirect back from Spotify: swap ?code=... for tokens.
@@ -73,6 +72,7 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                 return;
             }
             setCurrentSong(song);
+            setPolledAt(Date.now());
         };
 
         poll();
@@ -104,21 +104,16 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
         setCurrentSong(null);
     };
 
-    const handleSave = async () => {
+    const positionMs = usePlaybackPosition(currentSong, polledAt);
+
+    // Throws on failure so the form keeps its values and shows the error
+    const handleSave = async (request: AddColorRequest) => {
         if (!currentSong) return;
-        setSaving(true);
-        try {
-            const saved = await saveColor(currentSong, { color });
-            setLoadedColors((prev) => ({
-                songId: saved.songId,
-                colors:
-                    prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
-            }));
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSaving(false);
-        }
+        const saved = await saveColor(currentSong, request);
+        setLoadedColors((prev) => ({
+            songId: saved.songId,
+            colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
+        }));
     };
 
     // Throws on failure so the swatch can stay put and let you retry
@@ -144,6 +139,16 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                 )}
             </div>
             <SpotifyNowPlaying song={currentSong} />
+            {/* Keyed by song so a new song starts with an empty form. The part stays filled in
+                after saving, so several colors can go on the same part. */}
+            <ColorEntryForm
+                key={songId ?? 'none'}
+                color={color}
+                positionMs={positionMs}
+                durationMs={currentSong?.durationMs}
+                disabled={!currentSong}
+                onSubmit={handleSave}
+            />
             <div className="flex w-full flex-wrap pt-[3%]">
                 {colors.length > 0 ? (
                     colors.map((entry) => (
@@ -157,9 +162,6 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
                     <div>No colors have been set for this song.</div>
                 )}
             </div>
-            <button onClick={handleSave} disabled={!currentSong || saving} className={buttonClass}>
-                {saving ? 'Saving…' : 'Save'}
-            </button>
         </div>
     );
 };
