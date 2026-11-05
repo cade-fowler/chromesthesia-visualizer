@@ -36,15 +36,39 @@ export const parseNotes = (text: string): string[] => [
 
 export type FormResult = { ok: true; request: AddColorRequest } | { ok: false; error: string };
 
-/** Turns the form into a request, with the same rules for times as the server. */
-export const readFields = (color: HexColor, fields: ColorEntryFields): FormResult => {
+/**
+ * Fills in the missing side of an open-ended part: a start alone runs to the end of the song
+ * (when its length is known), and an end alone runs from the beginning.
+ */
+export const fillOpenEnds = (
+    startMs: number | undefined,
+    endMs: number | undefined,
+    durationMs?: number,
+): { startMs: number | undefined; endMs: number | undefined } => {
+    if (startMs !== undefined && endMs === undefined) return { startMs, endMs: durationMs };
+    if (startMs === undefined && endMs !== undefined) return { startMs: 0, endMs };
+    return { startMs, endMs };
+};
+
+/**
+ * Turns the form into a request, with the same rules for times as the server.
+ *
+ * @param durationMs The song's length, which a start given without an end runs to
+ */
+export const readFields = (
+    color: HexColor,
+    fields: ColorEntryFields,
+    durationMs?: number,
+): FormResult => {
     const startText = fields.start.trim();
     const endText = fields.end.trim();
-    const startMs = startText ? parseTime(startText) : undefined;
-    const endMs = endText ? parseTime(endText) : undefined;
+    const parsedStart = startText ? parseTime(startText) : undefined;
+    const parsedEnd = endText ? parseTime(endText) : undefined;
 
-    if (startMs === null) return { ok: false, error: 'Start should be a time like 1:15' };
-    if (endMs === null) return { ok: false, error: 'End should be a time like 1:15' };
+    if (parsedStart === null) return { ok: false, error: 'Start should be a time like 1:15' };
+    if (parsedEnd === null) return { ok: false, error: 'End should be a time like 1:15' };
+    // To require both times again, use parsedStart/parsedEnd here instead
+    const { startMs, endMs } = fillOpenEnds(parsedStart, parsedEnd, durationMs);
     if ((startMs === undefined) !== (endMs === undefined)) {
         return { ok: false, error: 'Give both a start and an end, or neither for the whole song' };
     }

@@ -58,7 +58,7 @@ const ColorEntryForm = ({
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
-        const result = readFields(color, fields);
+        const result = readFields(color, fields, durationMs);
         if (!result.ok) {
             setError(result.error);
             return;
@@ -84,6 +84,12 @@ const ColorEntryForm = ({
         }
     };
 
+    // Left empty, a start means the beginning and an end means the end of the song
+    const placeholders = {
+        start: '0:00',
+        end: durationMs === undefined ? 'm:ss' : formatMs(durationMs),
+    };
+
     const timeInput = (which: 'start' | 'end', name: string) => (
         <label className="flex flex-1 flex-col gap-1">
             <span className="text-sm text-medium">{name}</span>
@@ -92,7 +98,7 @@ const ColorEntryForm = ({
                     className={inputClass}
                     value={fields[which]}
                     onChange={(e) => set({ [which]: e.target.value })}
-                    placeholder="m:ss"
+                    placeholder={placeholders[which]}
                     inputMode="decimal"
                     disabled={disabled}
                 />

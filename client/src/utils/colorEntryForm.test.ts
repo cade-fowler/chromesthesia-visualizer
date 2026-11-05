@@ -4,6 +4,7 @@ import {
     colorEntryChanges,
     emptyFields,
     fieldsFromEntry,
+    fillOpenEnds,
     parseNotes,
     readFields,
 } from './colorEntryForm';
@@ -49,7 +50,6 @@ describe('readFields', () => {
 
     it.each([
         [{ start: '1:15' }, 'Give both'],
-        [{ end: '1:15' }, 'Give both'],
         [{ start: 'soon', end: '1:15' }, 'Start should be'],
         [{ start: '0:10', end: 'later' }, 'End should be'],
         [{ start: '1:15', end: '1:15' }, 'End must be after start'],
@@ -58,6 +58,40 @@ describe('readFields', () => {
         const result = readFields('#ff0000', { ...emptyFields, ...fields });
         expect(result.ok).toBe(false);
         expect(!result.ok && result.error).toContain(error);
+    });
+});
+
+describe('open-ended parts', () => {
+    it('runs a start without an end to the end of the song', () => {
+        const result = readFields('#ff0000', { ...emptyFields, start: '3:00' }, 215000);
+        expect(result).toEqual({
+            ok: true,
+            request: { color: '#ff0000', startMs: 180000, endMs: 215000 },
+        });
+    });
+
+    it('runs an end without a start from the beginning', () => {
+        const result = readFields('#ff0000', { ...emptyFields, end: '0:30' }, 215000);
+        expect(result).toEqual({
+            ok: true,
+            request: { color: '#ff0000', startMs: 0, endMs: 30000 },
+        });
+    });
+
+    it('still needs an end when the song length is unknown', () => {
+        expect(readFields('#ff0000', { ...emptyFields, start: '3:00' }).ok).toBe(false);
+    });
+
+    it('rejects a start at or past the end of the song', () => {
+        expect(readFields('#ff0000', { ...emptyFields, start: '4:00' }, 215000).ok).toBe(false);
+    });
+
+    it('leaves complete and empty ranges alone', () => {
+        expect(fillOpenEnds(1, 2, 10)).toEqual({ startMs: 1, endMs: 2 });
+        expect(fillOpenEnds(undefined, undefined, 10)).toEqual({
+            startMs: undefined,
+            endMs: undefined,
+        });
     });
 });
 
