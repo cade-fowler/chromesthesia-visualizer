@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import type { ColorEntry } from '@chromesthesia/shared';
 import { textColorOn } from '../../utils/color';
 import { formatMs } from '../../utils/time';
 import { activeAt, layoutTimeline, timelineLength } from '../../utils/timeline';
+import TimelineTooltip from './TimelineTooltip';
 
 const LANE_REM = 2.25;
 // Each whole-song band gets at least this much height; more bands make the timeline taller.
@@ -34,6 +36,9 @@ const describe = (entry: ColorEntry) => {
  * parts sit on top at their place in the song, stacked when they overlap.
  */
 const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: TimelineProps) => {
+    const [hovered, setHovered] = useState<{ entry: ColorEntry; centerPercent: number } | null>(
+        null,
+    );
     const length = timelineLength(entries, durationMs);
     if (length === 0) return null;
 
@@ -42,11 +47,17 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
     const showPlayhead = positionMs !== undefined && positionMs !== null;
     const active = new Set(showPlayhead ? activeAt(entries, positionMs).map((e) => e.id) : []);
     const clickable = onSelect ? 'cursor-pointer' : 'cursor-default';
+    const hoverProps = (entry: ColorEntry, centerPercent: number) => {
+        const show = () => setHovered({ entry, centerPercent });
+        const hide = () => setHovered((prev) => (prev?.entry === entry ? null : prev));
+        return { onMouseEnter: show, onMouseLeave: hide, onFocus: show, onBlur: hide };
+    };
     const partsHeight = Math.max(lanes.length, 1) * LANE_REM + 0.75;
     const height = Math.max(partsHeight, wholeSong.length * MIN_BAND_REM);
 
     return (
-        <div className="mt-[3%]">
+        <div className="relative mt-[3%]">
+            {hovered && entries.includes(hovered.entry) && <TimelineTooltip {...hovered} />}
             <div
                 className="relative overflow-hidden rounded-[10px] border-2 border-medium bg-white/5"
                 style={{ height: `${height}rem` }}
@@ -57,7 +68,6 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                         <button
                             key={entry.id}
                             type="button"
-                            title={describe(entry)}
                             aria-label={`Whole-song color ${describe(entry)}`}
                             className={`flex-1 transition-opacity hover:opacity-80 ${clickable} ${
                                 entry.id === selectedId
@@ -65,6 +75,7 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                                     : 'opacity-60'
                             }`}
                             style={{ backgroundColor: entry.color }}
+                            {...hoverProps(entry, 50)}
                             onClick={() => onSelect?.(entry)}
                             disabled={!onSelect}
                         />
@@ -75,7 +86,6 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                         <button
                             key={part.id}
                             type="button"
-                            title={describe(part)}
                             aria-label={describe(part)}
                             className={`absolute overflow-hidden rounded-[6px] px-1.5 text-left text-xs leading-none text-ellipsis whitespace-nowrap shadow-md ring-black/40 transition-[box-shadow,transform] ${clickable} ${
                                 active.has(part.id)
@@ -90,6 +100,7 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                                 backgroundColor: part.color,
                                 color: textColorOn(part.color),
                             }}
+                            {...hoverProps(part, ((part.startMs + part.endMs) / 2 / length) * 100)}
                             onClick={() => onSelect?.(part)}
                             disabled={!onSelect}
                         >
