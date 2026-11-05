@@ -14,6 +14,8 @@ interface TimelineProps {
     positionMs?: number | null;
     /** Called when a color is clicked; without it the colors aren't clickable */
     onSelect?: (entry: ColorEntry) => void;
+    /** A color to outline, such as the one being edited */
+    selectedId?: string;
 }
 
 const describe = (entry: ColorEntry) => {
@@ -28,7 +30,7 @@ const describe = (entry: ColorEntry) => {
  * How a song's colors change through it. Whole-song colors fill the background as bands;
  * parts sit on top at their place in the song, stacked when they overlap.
  */
-const Timeline = ({ entries, durationMs, positionMs, onSelect }: TimelineProps) => {
+const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: TimelineProps) => {
     const length = timelineLength(entries, durationMs);
     if (length === 0) return null;
 
@@ -52,7 +54,11 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect }: TimelineProps) 
                             type="button"
                             title={describe(entry)}
                             aria-label={`Whole-song color ${describe(entry)}`}
-                            className={`flex-1 opacity-60 transition-opacity hover:opacity-80 ${clickable}`}
+                            className={`flex-1 transition-opacity hover:opacity-80 ${clickable} ${
+                                entry.id === selectedId
+                                    ? 'opacity-90 outline-2 -outline-offset-4 outline-light outline-dashed'
+                                    : 'opacity-60'
+                            }`}
                             style={{ backgroundColor: entry.color }}
                             onClick={() => onSelect?.(entry)}
                             disabled={!onSelect}

@@ -1,22 +1,28 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
+import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import type { ColorEntry } from '@chromesthesia/shared';
 import { isDark, textColorOn } from '../../../../utils/color';
+import { formatMs } from '../../../../utils/time';
 
 interface ColorSwatchProps {
     entry: ColorEntry;
     /** Deletes the entry; a rejection leaves the swatch in place so it can be retried */
     onDelete: () => Promise<void>;
+    /** Opens the entry in the edit form */
+    onEdit: () => void;
 }
 
-const ColorSwatch = ({ entry, onDelete }: ColorSwatchProps) => {
-    const { color, label, notes } = entry;
+const ColorSwatch = ({ entry, onDelete, onEdit }: ColorSwatchProps) => {
+    const { color, label, notes, startMs, endMs } = entry;
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [failed, setFailed] = useState(false);
     const textColor = textColorOn(color);
     const outlined = { color: textColor, borderColor: textColor };
+    const iconButtonClass = `rounded-[30%] px-1.5 py-1 text-base ${
+        isDark(color) ? 'hover:bg-white/20' : 'hover:bg-black/20'
+    }`;
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -66,19 +72,34 @@ const ColorSwatch = ({ entry, onDelete }: ColorSwatchProps) => {
                             </button>
                         </>
                     ) : (
-                        <button
-                            aria-label={`Delete ${color}`}
-                            className={`rounded-[30%] px-1.5 py-1 text-base ${
-                                isDark(color) ? 'hover:bg-white/20' : 'hover:bg-black/20'
-                            }`}
-                            onClick={() => setConfirmingDelete(true)}
-                        >
-                            <FontAwesomeIcon icon={faTrashCan} style={{ color: textColor }} />
-                        </button>
+                        <div className="flex gap-0.5">
+                            <button
+                                aria-label={`Edit ${color}`}
+                                className={iconButtonClass}
+                                onClick={onEdit}
+                            >
+                                <FontAwesomeIcon
+                                    icon={faPenToSquare}
+                                    style={{ color: textColor }}
+                                />
+                            </button>
+                            <button
+                                aria-label={`Delete ${color}`}
+                                className={iconButtonClass}
+                                onClick={() => setConfirmingDelete(true)}
+                            >
+                                <FontAwesomeIcon icon={faTrashCan} style={{ color: textColor }} />
+                            </button>
+                        </div>
                     )}
                 </div>
                 <span>{color}</span>
                 {label && <span className="text-sm">{label}</span>}
+                {startMs !== undefined && endMs !== undefined && (
+                    <span className="text-sm">
+                        {formatMs(startMs)}–{formatMs(endMs)}
+                    </span>
+                )}
                 {notes && notes.length > 0 && (
                     <span className="px-2 text-center text-sm italic">{notes.join(', ')}</span>
                 )}
