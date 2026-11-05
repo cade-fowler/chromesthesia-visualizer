@@ -37,3 +37,11 @@ export const saveColor = async (song: NowPlaying, color: HexColor): Promise<Colo
     if (!colorResponse.ok) throw new Error(`Saving color failed (${colorResponse.status})`);
     return colorResponse.json();
 };
+
+/** Deletes one color entry. One that's already gone counts as deleted. */
+export const deleteColor = async (id: string): Promise<void> => {
+    const response = await fetch(`/api/colors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!response.ok && response.status !== 404) {
+        throw new Error(`Deleting color failed (${response.status})`);
+    }
+};

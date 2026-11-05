@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from './ColorSwatch/ColorSwatch';
-import { getColors, saveColor } from '../../databaseAPI';
+import { deleteColor, getColors, saveColor } from '../../databaseAPI';
 import {
     login,
     logout,
@@ -119,6 +119,14 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
         }
     };
 
+    // Throws on failure so the swatch can stay put and let you retry
+    const handleDelete = async (id: string) => {
+        await deleteColor(id);
+        setLoadedColors((prev) =>
+            prev ? { ...prev, colors: prev.colors.filter((entry) => entry.id !== id) } : prev,
+        );
+    };
+
     return (
         <div className="h-full w-full overflow-y-auto bg-panel p-[5%] text-white">
             <div className="flex items-center justify-between">
@@ -136,7 +144,13 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
             <SpotifyNowPlaying song={currentSong} />
             <div className="flex w-full flex-wrap pt-[3%]">
                 {colors.length > 0 ? (
-                    colors.map((entry) => <ColorSwatch color={entry.color} key={entry.id} />)
+                    colors.map((entry) => (
+                        <ColorSwatch
+                            entry={entry}
+                            key={entry.id}
+                            onDelete={() => handleDelete(entry.id)}
+                        />
+                    ))
                 ) : (
                     <div>No colors have been set for this song.</div>
                 )}
