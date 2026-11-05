@@ -42,7 +42,16 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     const [editing, setEditing] = useState<{ entry: ColorEntry; colorBefore: HexColor } | null>(
         null,
     );
+    // A short confirmation shown beside the Add color button. The id restarts the timer when
+    // the same message comes up twice in a row.
+    const [notice, setNotice] = useState<{ text: string; id: number } | null>(null);
     const exchangedCode = useRef(false);
+
+    useEffect(() => {
+        if (!notice) return;
+        const timeout = setTimeout(() => setNotice(null), 3000);
+        return () => clearTimeout(timeout);
+    }, [notice]);
 
     // Handle the redirect back from Spotify: swap ?code=... for tokens.
     // The ref guards against StrictMode running this twice (a code is single-use).
@@ -116,6 +125,8 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
 
     const positionMs = usePlaybackPosition(currentSong, polledAt);
 
+    const notify = (text: string) => setNotice({ text, id: Date.now() });
+
     // Throws on failure so the form keeps its values and shows the error
     const handleSave = async (request: AddColorRequest) => {
         if (!currentSong) return;
@@ -124,11 +135,13 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             songId: saved.songId,
             colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
         }));
+        notify('Color added');
     };
 
     const startEditing = (entry: ColorEntry) => {
         // Switching from one entry to another keeps the color from before the first
         setEditing((prev) => ({ entry, colorBefore: prev ? prev.colorBefore : color }));
+        setNotice(null);
         onColorChange(entry.color);
     };
 
@@ -148,6 +161,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             );
         }
         stopEditing();
+        notify('Changes saved');
     };
 
     // Throws on failure so the swatch or form can stay put and let you retry
@@ -156,7 +170,10 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         setLoadedColors((prev) =>
             prev ? { ...prev, colors: prev.colors.filter((entry) => entry.id !== id) } : prev,
         );
-        if (editingEntry?.id === id) stopEditing();
+        if (editingEntry?.id === id) {
+            stopEditing();
+            notify('Color deleted');
+        }
     };
 
     return (
@@ -186,7 +203,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             {editingEntry && (
                 <ColorEntryForm
                     key={editingEntry.id}
-                    editing
+                    editing={editingEntry}
                     initial={fieldsFromEntry(editingEntry)}
                     color={color}
                     positionMs={positionMs}
@@ -206,6 +223,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     positionMs={positionMs}
                     durationMs={currentSong?.durationMs}
                     disabled={!currentSong}
+                    status={notice?.text}
                     onSubmit={handleSave}
                 />
             </div>

@@ -1,5 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
-import type { AddColorRequest, HexColor } from '@chromesthesia/shared';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleCheck, faPenToSquare, faSquarePlus } from '@fortawesome/free-regular-svg-icons';
+import type { AddColorRequest, ColorEntry, HexColor } from '@chromesthesia/shared';
 import { emptyFields, readFields, type ColorEntryFields } from '../../../utils/colorEntryForm';
 import { formatMs, parseTime } from '../../../utils/time';
 import { textColorOn } from '../../../utils/color';
@@ -11,19 +13,25 @@ const inputClass =
     'w-full rounded-[5px] border-2 border-medium bg-transparent px-2 py-1 text-light ' +
     'outline-none placeholder:text-medium focus:border-accent';
 
+/** The part and times of the entry being edited, shown beside "Editing" */
+const detailChipClass =
+    'rounded-[5px] border border-accent/60 bg-accent/15 px-2 py-0.5 text-sm text-light';
+
 interface ColorEntryFormProps {
     /** The picker's color, which is what gets saved */
     color: HexColor;
     /** Starting values; the form keeps its own state after that (re-key it to reset) */
     initial?: ColorEntryFields;
-    /** Edit an existing entry instead of adding one */
-    editing?: boolean;
+    /** The saved entry being edited, as it was before; omit to add a new color */
+    editing?: ColorEntry;
     /** Where playback is now, for the Mark buttons; null when nothing is playing */
     positionMs: number | null;
     /** Length of the song, to warn about times past the end */
     durationMs?: number;
     /** No song to save to */
     disabled?: boolean;
+    /** A short confirmation shown beside the submit button, e.g. "Color added" */
+    status?: string | null;
     /** Saves the entry; a rejection's message is shown and the form keeps its values */
     onSubmit: (request: AddColorRequest) => Promise<void>;
     onCancel?: () => void;
@@ -33,10 +41,11 @@ interface ColorEntryFormProps {
 const ColorEntryForm = ({
     color,
     initial = emptyFields,
-    editing = false,
+    editing,
     positionMs,
     durationMs,
     disabled = false,
+    status,
     onSubmit,
     onCancel,
     onDelete,
@@ -120,17 +129,58 @@ const ColorEntryForm = ({
     return (
         <form
             onSubmit={handleSubmit}
-            className="mt-[3%] flex flex-col gap-3 rounded-[15px] border-[3px] border-medium p-4"
+            aria-label={editing ? 'Edit a saved color' : 'Add a new color'}
+            className={`mt-[3%] flex flex-col gap-3 rounded-[15px] border-[3px] p-4 ${
+                editing ? 'border-accent bg-accent/10' : 'border-medium'
+            }`}
         >
             <div className="flex items-center justify-between gap-2">
-                <span className="text-lg font-bold text-light">
-                    {editing ? 'Edit color' : 'Add color'}
-                </span>
-                <span
-                    className="rounded-[5px] px-2 py-0.5 text-sm"
-                    style={{ backgroundColor: color, color: textColorOn(color) }}
-                >
-                    {color}
+                {editing ? (
+                    // One line, like the add form's header, so the form keeps its height. The
+                    // part and times sit in chips like the color chips on the right.
+                    <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex shrink-0 items-center gap-2 text-lg font-bold text-accent">
+                            <FontAwesomeIcon icon={faPenToSquare} />
+                            Editing
+                        </span>
+                        {editing.label && (
+                            <span className={`${detailChipClass} min-w-0 truncate`}>
+                                {editing.label}
+                            </span>
+                        )}
+                        <span className={`${detailChipClass} shrink-0`}>
+                            {editing.startMs === undefined
+                                ? 'Whole song'
+                                : `${formatMs(editing.startMs)}–${formatMs(editing.endMs!)}`}
+                        </span>
+                    </span>
+                ) : (
+                    <span className="flex items-center gap-2 text-lg font-bold text-light">
+                        <FontAwesomeIcon icon={faSquarePlus} />
+                        Add a new color
+                    </span>
+                )}
+                <span className="flex shrink-0 items-center gap-1.5 text-sm">
+                    {editing && editing.color !== color && (
+                        <>
+                            <span
+                                className="rounded-[5px] px-2 py-0.5 line-through"
+                                style={{
+                                    backgroundColor: editing.color,
+                                    color: textColorOn(editing.color),
+                                }}
+                            >
+                                {editing.color}
+                            </span>
+                            <span aria-label="becomes">→</span>
+                        </>
+                    )}
+                    <span
+                        className="rounded-[5px] px-2 py-0.5"
+                        style={{ backgroundColor: color, color: textColorOn(color) }}
+                    >
+                        {color}
+                    </span>
                 </span>
             </div>
             <div className="flex flex-wrap items-end gap-3">
@@ -186,9 +236,24 @@ const ColorEntryForm = ({
                 </span>
             )}
             <div className="-m-2 flex flex-wrap items-center">
-                <button type="submit" className={buttonClass} disabled={disabled || busy !== null}>
-                    {busy === 'saving' ? 'Saving…' : editing ? 'Save changes' : 'Save'}
+                <button
+                    type="submit"
+                    className={`${buttonClass} ${
+                        editing ? 'border-accent! bg-accent text-dark! hover:bg-accent/80' : ''
+                    }`}
+                    disabled={disabled || busy !== null}
+                >
+                    {busy === 'saving' ? 'Saving…' : editing ? 'Save changes' : 'Add color'}
                 </button>
+                {/* Always rendered so screen readers announce the text when it appears */}
+                <span role="status" className="mx-2 text-sm text-spotify">
+                    {status && (
+                        <span className="flex items-center gap-1.5">
+                            <FontAwesomeIcon icon={faCircleCheck} />
+                            {status}
+                        </span>
+                    )}
+                </span>
                 {onCancel && (
                     <button
                         type="button"
