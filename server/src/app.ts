@@ -1,6 +1,7 @@
 import 'express-async-errors';
 import express, { type ErrorRequestHandler } from 'express';
 import songs from './routes/songs.js';
+import colors from './routes/colors.js';
 
 /** Builds the Express app without starting it, so tests can drive it directly. */
 export function createApp() {
@@ -9,6 +10,7 @@ export function createApp() {
     app.use(express.json());
 
     app.use('/api/songs', songs);
+    app.use('/api/colors', colors);
 
     // Unknown API routes
     app.use('/api', (_req, res) => {
