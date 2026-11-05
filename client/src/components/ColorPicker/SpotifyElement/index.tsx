@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from './ColorSwatch/ColorSwatch';
 import { deleteColor, getColors, saveColor } from '../../databaseAPI';
+import { insertInSongOrder } from '../../../utils/colorOrder';
 import {
     login,
     logout,
@@ -110,7 +111,8 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
             const saved = await saveColor(currentSong, color);
             setLoadedColors((prev) => ({
                 songId: saved.songId,
-                colors: prev?.songId === saved.songId ? [...prev.colors, saved] : [saved],
+                colors:
+                    prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
             }));
         } catch (err) {
             console.error(err);

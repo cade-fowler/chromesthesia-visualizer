@@ -36,7 +36,14 @@ export const colors = () => getDb().collection<ColorDoc>('colors');
 /** Creates the indexes the app relies on. A no-op when they already exist. */
 export async function ensureIndexes(target: Db): Promise<void> {
     await target.collection('songs').createIndex({ id: 1 }, { unique: true });
-    await target.collection('colors').createIndex({ songId: 1, createdAt: 1 });
+    // Serves colorsFor()'s filter and sort. Replaces { songId: 1, createdAt: 1 }.
+    await target.collection('colors').createIndex({ songId: 1, startMs: 1, createdAt: 1 });
+    await target
+        .collection('colors')
+        .dropIndex('songId_1_createdAt_1')
+        .catch((err) => {
+            if (err?.codeName !== 'IndexNotFound') throw err;
+        });
     await target.collection('colors').createIndex({ color: 1 });
 }
 

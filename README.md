@@ -86,11 +86,14 @@ history and notes, can be deleted by id, and can be queried across all songs for
 | Method   | Route                   | What it does                                               |
 | -------- | ----------------------- | ---------------------------------------------------------- |
 | `GET`    | `/api/songs`            | List songs, optionally filtered by `?title=` or `?artist=` |
-| `GET`    | `/api/songs/:id`        | One song with its colors, oldest first                     |
+| `GET`    | `/api/songs/:id`        | One song with its colors, in song order                    |
 | `PUT`    | `/api/songs/:id`        | Create or update a song's metadata                         |
-| `GET`    | `/api/songs/:id/colors` | A song's colors, oldest first                              |
+| `GET`    | `/api/songs/:id/colors` | A song's colors, in song order                             |
 | `POST`   | `/api/songs/:id/colors` | Add a color to a song                                      |
 | `DELETE` | `/api/colors/:id`       | Delete one color                                           |
+
+Colors come back in **song order**: whole-song colors first, then parts by `startMs`, with ties
+going to whichever was saved first. That's the order a timeline of the song would draw them in.
 
 There's no authentication yet, so don't expose the server publicly.
 

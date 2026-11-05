@@ -195,6 +195,26 @@ describe('GET /api/songs', () => {
         expect(res.body.map((c: { color: string }) => c.color)).toEqual(['#ff0000', '#00ff00']);
     });
 
+    it('orders colors by where they start in the song, then by when they were saved', async () => {
+        await putSong();
+        // Saved in this order; each is a [color, startMs, endMs] (no range = whole song)
+        const saved: [string, number?, number?][] = [
+            ['#000005', 5000, 9000],
+            ['#00000a', undefined, undefined],
+            ['#000001', 1000, 3000],
+            ['#000002', 1000, 2000], // same start as #000001: saved later, so after it
+            ['#000000', 0, 500],
+            ['#00000b', undefined, undefined],
+        ];
+        for (const [color, startMs, endMs] of saved) await addColor({ color, startMs, endMs });
+
+        const expected = ['#00000a', '#00000b', '#000000', '#000001', '#000002', '#000005'];
+        const list = await request(app).get(`/api/songs/${id}/colors`);
+        const one = await request(app).get(`/api/songs/${id}`);
+        expect(list.body.map((c: { color: string }) => c.color)).toEqual(expected);
+        expect(one.body.colors.map((c: { color: string }) => c.color)).toEqual(expected);
+    });
+
     it('returns an empty list for a song with no colors', async () => {
         await putSong();
         const res = await request(app).get(`/api/songs/${id}/colors`);

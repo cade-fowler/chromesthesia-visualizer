@@ -47,7 +47,11 @@ export interface ColorEntry {
     createdAt: string;
 }
 
-/** Response of GET /api/songs/:id: the song with its colors, oldest first. */
+/**
+ * Response of GET /api/songs/:id: the song with its colors in song order, which is the order
+ * GET /api/songs/:id/colors uses too. Whole-song colors come first, then parts by startMs;
+ * ties go to whichever was saved first.
+ */
 export interface SongWithColors extends Song {
     colors: ColorEntry[];
 }

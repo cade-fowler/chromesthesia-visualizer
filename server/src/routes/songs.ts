@@ -16,8 +16,14 @@ const withoutMongoId = { projection: { _id: 0 } } as const;
 
 const songExists = async (id: string) => (await songs().countDocuments({ id }, { limit: 1 })) > 0;
 
+// Song order: by where the part starts, then by when it was saved. Whole-song colors have no
+// startMs, which Mongo sorts before any number, so they come first. Keep in step with
+// compareColorEntries() in the client.
 const colorsFor = async (songId: string): Promise<ColorEntry[]> => {
-    const docs = await colors().find({ songId }).sort({ createdAt: 1, _id: 1 }).toArray();
+    const docs = await colors()
+        .find({ songId })
+        .sort({ startMs: 1, createdAt: 1, _id: 1 })
+        .toArray();
     return docs.map(toColorEntry);
 };
 
@@ -34,7 +40,7 @@ router.get<NoParams, Song[] | ApiError>('/', async (req, res) => {
     res.json(results);
 });
 
-// Get one song by Spotify track id, with its colors
+// Get one song by Spotify track id, with its colors in song order
 router.get<IdParams, SongWithColors | ApiError>('/:id', async (req, res) => {
     const song = await songs().findOne({ id: req.params.id }, withoutMongoId);
     if (!song) return res.status(404).json({ error: 'Song not found' });
@@ -60,7 +66,7 @@ router.put<IdParams, Song | ApiError>('/:id', async (req, res) => {
     res.status(result.upsertedCount ? 201 : 200).json(saved!);
 });
 
-// Get the colors for one song, oldest first
+// Get the colors for one song, in song order
 router.get<IdParams, ColorEntry[] | ApiError>('/:id/colors', async (req, res) => {
     if (!(await songExists(req.params.id))) {
         return res.status(404).json({ error: 'Song not found' });
