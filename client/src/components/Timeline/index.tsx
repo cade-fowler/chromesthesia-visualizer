@@ -4,6 +4,9 @@ import { formatMs } from '../../utils/time';
 import { activeAt, layoutTimeline, timelineLength } from '../../utils/timeline';
 
 const LANE_REM = 2.25;
+// Each whole-song band gets at least this much height; more bands make the timeline taller.
+// Set to 0 to go back to squeezing the bands into the height the parts need.
+const MIN_BAND_REM = 1.25;
 
 interface TimelineProps {
     /** A song's colors, in any order */
@@ -39,12 +42,14 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
     const showPlayhead = positionMs !== undefined && positionMs !== null;
     const active = new Set(showPlayhead ? activeAt(entries, positionMs).map((e) => e.id) : []);
     const clickable = onSelect ? 'cursor-pointer' : 'cursor-default';
+    const partsHeight = Math.max(lanes.length, 1) * LANE_REM + 0.75;
+    const height = Math.max(partsHeight, wholeSong.length * MIN_BAND_REM);
 
     return (
         <div className="mt-[3%]">
             <div
                 className="relative overflow-hidden rounded-[10px] border-2 border-medium bg-white/5"
-                style={{ height: `${Math.max(lanes.length, 1) * LANE_REM + 0.75}rem` }}
+                style={{ height: `${height}rem` }}
             >
                 {/* Backdrop: one horizontal band per whole-song color */}
                 <div className="absolute inset-0 flex flex-col">
