@@ -11,7 +11,7 @@ export const hexColor = z
     });
 
 // Short descriptors such as "glossy"; blank and repeated notes are rejected
-const notes = z
+export const notes = z
     .array(z.string().trim().min(1).max(200))
     .max(20)
     .refine((n) => new Set(n).size === n.length, 'Notes must not repeat');

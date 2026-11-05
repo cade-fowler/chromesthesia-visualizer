@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate:split-colors": "tsx src/scripts/migrate-split-colors.ts"
   },
   "keywords": [],
   "author": "",
