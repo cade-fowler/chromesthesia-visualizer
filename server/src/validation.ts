@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { AddColorRequest, UpsertSongRequest } from '@chromesthesia/shared';
+import type { AddColorRequest, UpdateColorRequest, UpsertSongRequest } from '@chromesthesia/shared';
 
 // Accepts #rgb or #rrggbb in any case; stores lowercase #rrggbb so "#FFF" and "#ffffff" match
 export const hexColor = z
@@ -16,32 +16,54 @@ export const notes = z
     .max(20)
     .refine((n) => new Set(n).size === n.length, 'Notes must not repeat');
 
+const ms = z.number().int().nonnegative();
+
 export const upsertSongSchema = z.object({
     title: z.string().min(1),
     artists: z.array(z.string()),
     albumImageUrl: z.url().optional(),
     songUrl: z.url(),
+    durationMs: ms.positive().optional(),
     notes: notes.optional(),
 }) satisfies z.ZodType<UpsertSongRequest>;
 
-const ms = z.number().int().nonnegative();
+const label = z.string().trim().min(1).max(50);
+
+/** Why a part's times are invalid, or undefined when they're fine (both missing is whole-song). */
+export const partError = (startMs?: number, endMs?: number): string | undefined => {
+    if ((startMs === undefined) !== (endMs === undefined)) {
+        return 'startMs and endMs must be given together';
+    }
+    if (startMs !== undefined && endMs! <= startMs) return 'endMs must be greater than startMs';
+    return undefined;
+};
 
 export const addColorSchema = z
     .object({
         color: hexColor,
         startMs: ms.optional(),
         endMs: ms.optional(),
-        label: z.string().trim().min(1).max(50).optional(),
+        label: label.optional(),
         notes: notes.optional(),
     })
-    .refine((c) => (c.startMs === undefined) === (c.endMs === undefined), {
-        message: 'startMs and endMs must be given together',
-        path: ['endMs'],
-    })
-    .refine((c) => c.startMs === undefined || c.endMs! > c.startMs, {
-        message: 'endMs must be greater than startMs',
-        path: ['endMs'],
+    .superRefine((c, ctx) => {
+        const message = partError(c.startMs, c.endMs);
+        if (message) ctx.addIssue({ code: 'custom', message, path: ['endMs'] });
     }) satisfies z.ZodType<AddColorRequest>;
+
+// Times are checked against the stored entry once merged, in the route, with partError()
+export const updateColorSchema = z
+    .strictObject({
+        color: hexColor.optional(),
+        startMs: ms.nullable().optional(),
+        endMs: ms.nullable().optional(),
+        label: label.nullable().optional(),
+        notes: notes.nullable().optional(),
+    })
+    .refine(
+        (c) => Object.keys(c).length > 0,
+        'Nothing to update',
+    ) satisfies z.ZodType<UpdateColorRequest>;
 
 // Only these query params are passed through to Mongo, and only as plain strings.
 // Passing req.query straight to find() would let ?field[$ne]=x inject operators.

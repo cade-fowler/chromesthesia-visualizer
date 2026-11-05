@@ -20,9 +20,11 @@ interface TokenResponse {
 /** The parts of Spotify's currently-playing response that we use. */
 interface SpotifyPlayback {
     is_playing: boolean;
+    progress_ms: number | null;
     item: {
         id: string;
         name: string;
+        duration_ms: number;
         type: 'track' | 'episode';
         album: { images: { url: string }[] };
         artists: { name: string }[];
@@ -158,5 +160,7 @@ export const getNowPlayingItem = async (): Promise<NowPlaying | null> => {
         albumImageUrl: item.album.images[0]?.url,
         songUrl: item.external_urls.spotify,
         isPlaying: playback.is_playing,
+        progressMs: playback.progress_ms ?? 0,
+        durationMs: item.duration_ms,
     };
 };

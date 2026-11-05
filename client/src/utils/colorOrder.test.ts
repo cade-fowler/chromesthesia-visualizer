@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ColorEntry } from '@chromesthesia/shared';
-import { compareColorEntries, insertInSongOrder } from './colorOrder';
+import { compareColorEntries, insertInSongOrder, replaceInSongOrder } from './colorOrder';
 
 const entry = (
     id: string,
@@ -49,5 +49,21 @@ describe('insertInSongOrder', () => {
 
         expect(result.map((e) => e.id)).toEqual(['whole', 'new', 'part']);
         expect(existing).toHaveLength(2); // doesn't mutate the original
+    });
+});
+
+describe('replaceInSongOrder', () => {
+    it('swaps in the updated entry and moves it to its new place', () => {
+        const existing = [
+            entry('whole', '01'),
+            entry('a', '02', [0, 1000]),
+            entry('b', '03', [2000, 3000]),
+        ];
+
+        const result = replaceInSongOrder(existing, entry('a', '02', [4000, 5000]));
+
+        expect(result.map((e) => e.id)).toEqual(['whole', 'b', 'a']);
+        expect(result[2].startMs).toBe(4000);
+        expect(existing[1].startMs).toBe(0); // doesn't mutate the original
     });
 });

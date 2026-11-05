@@ -45,6 +45,14 @@ describe('PUT /api/songs/:id', () => {
         expect(await songs().findOne({ id })).not.toHaveProperty('albumImageUrl');
     });
 
+    it('stores durationMs and keeps it when a save leaves it out', async () => {
+        await putSong({ ...song, durationMs: 215000 });
+        const res = await putSong();
+
+        expect(res.body.durationMs).toBe(215000);
+        expect((await putSong({ ...song, durationMs: 0 })).status).toBe(400);
+    });
+
     it('keeps notes when a save leaves them out, and clears them with []', async () => {
         await putSong({ ...song, notes: ['glossy'] });
         const res = await putSong();

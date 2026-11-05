@@ -13,6 +13,10 @@ export interface NowPlaying {
     albumImageUrl?: string;
     songUrl: string;
     isPlaying: boolean;
+    /** Playback position when Spotify was polled */
+    progressMs: number;
+    /** Length of the track */
+    durationMs: number;
 }
 
 /** A song's metadata as stored in MongoDB and returned by the API. */
@@ -23,6 +27,8 @@ export interface Song {
     artists: string[];
     albumImageUrl?: string;
     songUrl: string;
+    /** Length of the track, from Spotify. Older songs get it the next time they're saved. */
+    durationMs?: number;
     /** Impressions of the song as a whole, such as a texture ("glossy") */
     notes?: string[];
 }
@@ -57,13 +63,25 @@ export interface SongWithColors extends Song {
 }
 
 /**
- * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes keeps the
- * song's current notes, so saving from Spotify never wipes them; send [] to clear them.
+ * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes or durationMs keeps
+ * the song's current value, so saving from Spotify never wipes notes; send [] to clear them.
  */
 export type UpsertSongRequest = Omit<Song, 'id'>;
 
 /** Body of POST /api/songs/:id/colors. Colors may be #rgb or #rrggbb in any case. */
 export type AddColorRequest = Pick<ColorEntry, 'color' | 'startMs' | 'endMs' | 'label' | 'notes'>;
+
+/**
+ * Body of PATCH /api/colors/:id. Only the fields given change; null clears a field. Clearing
+ * startMs and endMs together turns a part back into a whole-song color. Send at least one field.
+ */
+export interface UpdateColorRequest {
+    color?: HexColor;
+    startMs?: number | null;
+    endMs?: number | null;
+    label?: string | null;
+    notes?: string[] | null;
+}
 
 /** Shape of every API error response. */
 export interface ApiError {

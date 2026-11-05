@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NowPlaying } from '@chromesthesia/shared';
-import { deleteColor, getColors, saveColor } from './databaseAPI';
+import { deleteColor, getColors, saveColor, updateColor } from './databaseAPI';
 
 const fetchMock = vi.fn<typeof fetch>();
 vi.stubGlobal('fetch', fetchMock);
@@ -19,6 +19,8 @@ const nowPlaying: NowPlaying = {
     songUrl: 'https://open.spotify.com/track/1',
     albumImageUrl: 'https://i.scdn.co/image/1',
     isPlaying: true,
+    progressMs: 61000,
+    durationMs: 252000,
 };
 
 const entry = {
@@ -34,7 +36,7 @@ describe('saveColor', () => {
             .mockResolvedValueOnce(respond(201, {}))
             .mockResolvedValueOnce(respond(201, entry));
 
-        await expect(saveColor(nowPlaying, '#ff0000')).resolves.toEqual(entry);
+        await expect(saveColor(nowPlaying, { color: '#ff0000' })).resolves.toEqual(entry);
 
         const [[songUrl, songInit], [colorUrl, colorInit]] = fetchMock.mock.calls;
         expect(songUrl).toBe('/api/songs/track%201');
@@ -44,23 +46,70 @@ describe('saveColor', () => {
             artists: ['America', 'George Martin'],
             songUrl: 'https://open.spotify.com/track/1',
             albumImageUrl: 'https://i.scdn.co/image/1',
+            durationMs: 252000,
         });
         expect(colorUrl).toBe('/api/songs/track%201/colors');
         expect(colorInit?.method).toBe('POST');
         expect(JSON.parse(colorInit?.body as string)).toEqual({ color: '#ff0000' });
     });
 
+    it('posts a part with its range, label and notes', async () => {
+        fetchMock
+            .mockResolvedValueOnce(respond(200, {}))
+            .mockResolvedValueOnce(respond(201, entry));
+        const part = {
+            color: '#ff0000',
+            startMs: 1000,
+            endMs: 5000,
+            label: 'chorus',
+            notes: ['glossy'],
+        };
+
+        await saveColor(nowPlaying, part);
+
+        expect(JSON.parse(fetchMock.mock.calls[1][1]?.body as string)).toEqual(part);
+    });
+
     it("doesn't post the color if saving the song fails", async () => {
         fetchMock.mockResolvedValueOnce(respond(500));
 
-        await expect(saveColor(nowPlaying, '#ff0000')).rejects.toThrow('Saving song failed');
+        await expect(saveColor(nowPlaying, { color: '#ff0000' })).rejects.toThrow(
+            'Saving song failed (500)',
+        );
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('throws if posting the color fails', async () => {
-        fetchMock.mockResolvedValueOnce(respond(200, {})).mockResolvedValueOnce(respond(400));
+        fetchMock
+            .mockResolvedValueOnce(respond(200, {}))
+            .mockResolvedValueOnce(respond(400, { error: 'endMs must be greater than startMs' }));
 
-        await expect(saveColor(nowPlaying, '#ff0000')).rejects.toThrow('Saving color failed');
+        await expect(saveColor(nowPlaying, { color: '#ff0000' })).rejects.toThrow(
+            'Saving color failed (400): endMs must be greater than startMs',
+        );
+    });
+});
+
+describe('updateColor', () => {
+    it('sends PATCH with the changed fields', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, { ...entry, label: 'chorus' }));
+
+        await expect(updateColor(entry.id, { label: 'chorus', notes: null })).resolves.toEqual({
+            ...entry,
+            label: 'chorus',
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(`/api/colors/${entry.id}`);
+        expect(init?.method).toBe('PATCH');
+        expect(JSON.parse(init?.body as string)).toEqual({ label: 'chorus', notes: null });
+    });
+
+    it('throws with the server message when the update fails', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Color not found' }));
+        await expect(updateColor(entry.id, { label: 'x' })).rejects.toThrow(
+            'Updating color failed (404): Color not found',
+        );
     });
 });
 
