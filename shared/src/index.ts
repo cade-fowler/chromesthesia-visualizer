@@ -13,6 +13,10 @@ export interface NowPlaying {
     albumImageUrl?: string;
     songUrl: string;
     isPlaying: boolean;
+    /** Playback position when Spotify was polled */
+    progressMs: number;
+    /** Length of the track */
+    durationMs: number;
 }
 
 /** A song's metadata as stored in MongoDB and returned by the API. */

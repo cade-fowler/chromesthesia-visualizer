@@ -108,7 +108,7 @@ const SpotifyElement = ({ color }: SpotifyElementProps) => {
         if (!currentSong) return;
         setSaving(true);
         try {
-            const saved = await saveColor(currentSong, color);
+            const saved = await saveColor(currentSong, { color });
             setLoadedColors((prev) => ({
                 songId: saved.songId,
                 colors:
