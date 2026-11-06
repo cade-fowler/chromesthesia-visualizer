@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId, type Db, type Document } from 'mongodb';
-import { createApp } from '../app.js';
+import { testApp } from '../test/auth.js';
 import { connectDb, disconnectDb, ensureIndexes } from '../db.js';
 import { legacySongs } from '../test/legacy-songs.js';
 import { migrateSplitColors } from './split-colors.js';
@@ -100,7 +100,7 @@ describe('migrateSplitColors', () => {
 
         await connectDb(mongo.getUri(), db.databaseName);
         try {
-            const res = await request(createApp()).get(`/api/songs/${PAUL_REVERE}`);
+            const res = await request(testApp()).get(`/api/songs/${PAUL_REVERE}`);
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({ title: 'Paul Revere', notes: ['Glossy'] });
             expect(res.body.colors.map((c: { color: string }) => c.color)).toEqual([

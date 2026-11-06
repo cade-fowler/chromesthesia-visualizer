@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import request from 'supertest';
-import { createApp } from '../app.js';
 import { colors, songs } from '../db.js';
 import { useTestDb } from '../test/db.js';
+import { ownerAgent, testApp } from '../test/auth.js';
 
 useTestDb();
-const app = createApp();
+const app = testApp();
+// Every request is sent as the owner; auth.test.ts covers requests without a session
+const api = ownerAgent(app);
 
 const id = '1XZPtZVqcOzzxbYIR7MjQw';
 const song = {
@@ -15,10 +16,8 @@ const song = {
     albumImageUrl: 'https://i.scdn.co/image/abc',
 };
 
-const putSong = (body: object = song, songId = id) =>
-    request(app).put(`/api/songs/${songId}`).send(body);
-const addColor = (body: object, songId = id) =>
-    request(app).post(`/api/songs/${songId}/colors`).send(body);
+const putSong = (body: object = song, songId = id) => api.put(`/api/songs/${songId}`).send(body);
+const addColor = (body: object, songId = id) => api.post(`/api/songs/${songId}/colors`).send(body);
 
 describe('PUT /api/songs/:id', () => {
     it('creates a song with 201', async () => {
@@ -111,7 +110,7 @@ describe('PUT /api/songs/:id', () => {
     });
 
     it('rejects malformed JSON with 400', async () => {
-        const res = await request(app)
+        const res = await api
             .put(`/api/songs/${id}`)
             .set('Content-Type', 'application/json')
             .send('{"title":');
@@ -211,7 +210,7 @@ describe('GET /api/songs', () => {
 
     it('gets one song by id with its colors, oldest first', async () => {
         await seed();
-        const res = await request(app).get(`/api/songs/${id}`);
+        const res = await api.get(`/api/songs/${id}`);
 
         expect(res.status).toBe(200);
         expect(res.body).toMatchObject({ id, ...song });
@@ -223,7 +222,7 @@ describe('GET /api/songs', () => {
 
     it("gets a song's colors, oldest first", async () => {
         await seed();
-        const res = await request(app).get(`/api/songs/${id}/colors`);
+        const res = await api.get(`/api/songs/${id}/colors`);
 
         expect(res.status).toBe(200);
         expect(res.body.map((c: { color: string }) => c.color)).toEqual(['#ff0000', '#00ff00']);
@@ -243,28 +242,28 @@ describe('GET /api/songs', () => {
         for (const [color, startMs, endMs] of saved) await addColor({ color, startMs, endMs });
 
         const expected = ['#00000a', '#00000b', '#000000', '#000001', '#000002', '#000005'];
-        const list = await request(app).get(`/api/songs/${id}/colors`);
-        const one = await request(app).get(`/api/songs/${id}`);
+        const list = await api.get(`/api/songs/${id}/colors`);
+        const one = await api.get(`/api/songs/${id}`);
         expect(list.body.map((c: { color: string }) => c.color)).toEqual(expected);
         expect(one.body.colors.map((c: { color: string }) => c.color)).toEqual(expected);
     });
 
     it('returns an empty list for a song with no colors', async () => {
         await putSong();
-        const res = await request(app).get(`/api/songs/${id}/colors`);
+        const res = await api.get(`/api/songs/${id}/colors`);
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual([]);
     });
 
     it('returns 404 for an unknown song', async () => {
-        expect((await request(app).get('/api/songs/missing')).status).toBe(404);
-        expect((await request(app).get('/api/songs/missing/colors')).status).toBe(404);
+        expect((await api.get('/api/songs/missing')).status).toBe(404);
+        expect((await api.get('/api/songs/missing/colors')).status).toBe(404);
     });
 
     it('lists songs without embedding colors', async () => {
         await seed();
-        const res = await request(app).get('/api/songs');
+        const res = await api.get('/api/songs');
 
         expect(res.body).toHaveLength(2);
         expect(res.body[0]).not.toHaveProperty('colors');
@@ -273,26 +272,24 @@ describe('GET /api/songs', () => {
 
     it('filters the list by artist', async () => {
         await seed();
-        const res = await request(app).get('/api/songs').query({ artist: 'Lowswimmer' });
+        const res = await api.get('/api/songs').query({ artist: 'Lowswimmer' });
 
         expect(res.body.map((s: { id: string }) => s.id)).toEqual([id]);
     });
 
     it('rejects Mongo operators in query params', async () => {
-        const res = await request(app).get('/api/songs?title[$ne]=x');
+        const res = await api.get('/api/songs?title[$ne]=x');
         expect(res.status).toBe(400);
     });
 });
 
 it('no longer accepts POST /api/songs', async () => {
-    const res = await request(app)
-        .post('/api/songs')
-        .send({ id, ...song, color: '#ff0000' });
+    const res = await api.post('/api/songs').send({ id, ...song, color: '#ff0000' });
     expect(res.status).toBe(404);
 });
 
 it('returns JSON 404 for unknown API routes', async () => {
-    const res = await request(app).get('/api/nope');
+    const res = await api.get('/api/nope');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: 'Not found' });
 });

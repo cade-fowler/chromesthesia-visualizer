@@ -103,6 +103,17 @@ export interface UpdateColorRequest {
     notes?: string[] | null;
 }
 
+/** Body of POST /api/auth/login. */
+export interface LoginRequest {
+    password: string;
+}
+
+/** Response of GET /api/auth/me. */
+export interface AuthStatus {
+    /** Whether this browser is logged in as the owner, who is the only one who can write */
+    owner: boolean;
+}
+
 /** Shape of every API error response. */
 export interface ApiError {
     error: string;

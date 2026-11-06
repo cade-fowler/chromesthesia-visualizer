@@ -1,31 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import request from 'supertest';
 import { ObjectId } from 'mongodb';
-import { createApp } from '../app.js';
 import { colors } from '../db.js';
 import { useTestDb } from '../test/db.js';
+import { ownerAgent, testApp } from '../test/auth.js';
 
 useTestDb();
-const app = createApp();
+const app = testApp();
+// Every request is sent as the owner; auth.test.ts covers requests without a session
+const api = ownerAgent(app);
 
 const id = '1XZPtZVqcOzzxbYIR7MjQw';
 
 const seedColor = async (color: string, extra: object = {}) => {
-    await request(app)
-        .put(`/api/songs/${id}`)
-        .send({
-            title: 'Ontario',
-            artists: ['Novo Amor'],
-            songUrl: 'https://open.spotify.com/track/1XZPtZVqcOzzxbYIR7MjQw',
-        });
-    const res = await request(app)
-        .post(`/api/songs/${id}/colors`)
-        .send({ color, ...extra });
+    await api.put(`/api/songs/${id}`).send({
+        title: 'Ontario',
+        artists: ['Novo Amor'],
+        songUrl: 'https://open.spotify.com/track/1XZPtZVqcOzzxbYIR7MjQw',
+    });
+    const res = await api.post(`/api/songs/${id}/colors`).send({ color, ...extra });
     return res.body.id as string;
 };
 
-const patch = (colorId: string, body: object) =>
-    request(app).patch(`/api/colors/${colorId}`).send(body);
+const patch = (colorId: string, body: object) => api.patch(`/api/colors/${colorId}`).send(body);
 
 describe('PATCH /api/colors/:id', () => {
     it('changes only the given fields', async () => {
@@ -45,7 +41,7 @@ describe('PATCH /api/colors/:id', () => {
             notes: ['glossy'],
             createdAt: before!.createdAt.toISOString(),
         });
-        const stored = await request(app).get(`/api/songs/${id}/colors`);
+        const stored = await api.get(`/api/songs/${id}/colors`);
         expect(stored.body).toEqual([res.body]);
     });
 
@@ -109,17 +105,17 @@ describe('DELETE /api/colors/:id', () => {
         const red = await seedColor('#ff0000');
         await seedColor('#00ff00');
 
-        const res = await request(app).delete(`/api/colors/${red}`);
+        const res = await api.delete(`/api/colors/${red}`);
 
         expect(res.status).toBe(204);
         expect(res.body).toEqual({});
-        const left = await request(app).get(`/api/songs/${id}/colors`);
+        const left = await api.get(`/api/songs/${id}/colors`);
         expect(left.body.map((c: { color: string }) => c.color)).toEqual(['#00ff00']);
     });
 
     it('returns 404 for an unknown id', async () => {
         await seedColor('#ff0000');
-        const res = await request(app).delete(`/api/colors/${new ObjectId().toHexString()}`);
+        const res = await api.delete(`/api/colors/${new ObjectId().toHexString()}`);
 
         expect(res.status).toBe(404);
         expect(await colors().countDocuments()).toBe(1);
@@ -128,7 +124,7 @@ describe('DELETE /api/colors/:id', () => {
     it.each(['nope', 'abcdefghijkl', `${'a'.repeat(24)}0`])(
         'rejects the malformed id %s with 400',
         async (badId) => {
-            const res = await request(app).delete(`/api/colors/${badId}`);
+            const res = await api.delete(`/api/colors/${badId}`);
             expect(res.status).toBe(400);
         },
     );

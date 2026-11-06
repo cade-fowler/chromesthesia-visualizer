@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useOwner } from '../../../auth/OwnerContext';
 import SongSource from './SongSource';
 import SongNotes from './SongNotes';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
@@ -15,6 +16,7 @@ import {
     addColor,
     deleteColor,
     getSong,
+    logout as logoutOwner,
     saveColor,
     saveSongNotes,
     updateColor,
@@ -161,6 +163,19 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
 
     const pickSong = (id: string | null) => setSearchParams(id ? { song: id } : {});
 
+    const { setOwner } = useOwner();
+    const navigate = useNavigate();
+    // Ends the owner session (Spotify stays connected) and leaves the Studio
+    const handleLock = async () => {
+        try {
+            await logoutOwner();
+            setOwner(false);
+            navigate('/');
+        } catch {
+            notify('Locking failed');
+        }
+    };
+
     const handleLogout = () => {
         logout();
         setLoggedIn(false);
@@ -275,15 +290,20 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     </span>
                     {username && <span className="truncate text-sm text-silk">{username}</span>}
                 </span>
-                {loggedIn ? (
-                    <button onClick={handleLogout} className={keyClass}>
-                        Log out
+                <span className="flex shrink-0 gap-2">
+                    {loggedIn ? (
+                        <button onClick={handleLogout} className={keyClass}>
+                            Disconnect
+                        </button>
+                    ) : (
+                        <button onClick={login} className={keyClass}>
+                            Connect Spotify
+                        </button>
+                    )}
+                    <button onClick={handleLock} className={keyClass} title="Log out of the Studio">
+                        Lock
                     </button>
-                ) : (
-                    <button onClick={login} className={keyClass}>
-                        Connect Spotify
-                    </button>
-                )}
+                </span>
             </div>
             <SongSource pickedId={pickedId} onPick={pickSong} />
             {pickedId && storedLoad && !storedLoad.song ? (

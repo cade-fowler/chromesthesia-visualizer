@@ -8,7 +8,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "migrate:split-colors": "tsx src/scripts/migrate-split-colors.ts"
+    "migrate:split-colors": "tsx src/scripts/migrate-split-colors.ts",
+    "hash-password": "tsx src/scripts/hash-password.ts"
   },
   "keywords": [],
   "author": "",

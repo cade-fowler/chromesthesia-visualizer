@@ -13,6 +13,7 @@ A web app for recording the colors I perceive in music (chromesthesia) and analy
   - Spotify now playing integration
   - Saving colors to MongoDB, one record per color, with optional notes (e.g. a texture)
   - Deleting individual colors
+  - Owner login: anyone can browse, only the owner can write (password hash + signed session cookie)
 - **Planned:**
   - Color tied to specific timestamps in a song (the data model supports it; the UI doesn't yet)
   - Two way searching / filtering
@@ -42,6 +43,7 @@ npm install
 
 cp client/.env.example client/.env   # set VITE_SPOTIFY_CLIENT_ID
 cp server/.env.example server/.env   # set CONNECTION_STRING if not using local MongoDB
+npm run hash-password -w server     # pick the owner password; paste its output into server/.env
 
 npm run dev
 ```

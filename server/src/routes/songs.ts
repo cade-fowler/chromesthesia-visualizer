@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Filter } from 'mongodb';
 import { ObjectId } from 'mongodb';
 import type { ApiError, ColorEntry, Song, SongWithColors } from '@chromesthesia/shared';
+import { requireOwner } from '../auth.js';
 import { colors, songs, toColorEntry } from '../db.js';
 import { addColorSchema, listQuerySchema, upsertSongSchema } from '../validation.js';
 
@@ -47,8 +48,8 @@ router.get<IdParams, SongWithColors | ApiError>('/:id', async (req, res) => {
     res.json({ ...song, colors: await colorsFor(song.id) });
 });
 
-// Create or update a song's metadata (owner-only once auth lands)
-router.put<IdParams, Song | ApiError>('/:id', async (req, res) => {
+// Create or update a song's metadata
+router.put<IdParams, Song | ApiError>('/:id', requireOwner, async (req, res) => {
     const parsed = upsertSongSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ error: z.prettifyError(parsed.error) });
@@ -74,8 +75,8 @@ router.get<IdParams, ColorEntry[] | ApiError>('/:id/colors', async (req, res) =>
     res.json(await colorsFor(req.params.id));
 });
 
-// Assign a color to a song or part of it (owner-only once auth lands)
-router.post<IdParams, ColorEntry | ApiError>('/:id/colors', async (req, res) => {
+// Assign a color to a song or part of it
+router.post<IdParams, ColorEntry | ApiError>('/:id/colors', requireOwner, async (req, res) => {
     const parsed = addColorSchema.safeParse(req.body);
     if (!parsed.success) {
         return res.status(400).json({ error: z.prettifyError(parsed.error) });
