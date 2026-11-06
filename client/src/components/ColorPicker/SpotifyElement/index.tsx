@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import SongSource from './SongSource';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from '../../ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
@@ -9,7 +10,14 @@ import Nameplate from '../../ui/Nameplate';
 import { activeAt } from '../../../utils/timeline';
 import usePlaybackPosition from '../../../hooks/usePlaybackPosition';
 import Timeline from '../../Timeline';
-import { deleteColor, getColors, saveColor, updateColor } from '../../databaseAPI';
+import {
+    addColor,
+    deleteColor,
+    getColors,
+    getSong,
+    saveColor,
+    updateColor,
+} from '../../databaseAPI';
 import { insertInSongOrder, replaceInSongOrder } from '../../../utils/colorOrder';
 import { colorEntryChanges, fieldsFromEntry } from '../../../utils/colorEntryForm';
 import {
@@ -20,7 +28,13 @@ import {
     getNowPlayingItem,
     currentToken,
 } from './SpotifyAPI';
-import type { AddColorRequest, ColorEntry, HexColor, NowPlaying } from '@chromesthesia/shared';
+import type {
+    AddColorRequest,
+    ColorEntry,
+    HexColor,
+    NowPlaying,
+    SongWithColors,
+} from '@chromesthesia/shared';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -32,6 +46,15 @@ interface SpotifyElementProps {
 }
 
 const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
+    // ?song=<id> pins the Studio to a saved song; without it the Studio follows Spotify
+    const [searchParams, setSearchParams] = useSearchParams();
+    const pickedId = searchParams.get('song');
+    // The picked song as loaded: null when there's no such song, or an error message
+    const [picked, setPicked] = useState<{
+        id: string;
+        song: SongWithColors | null;
+        error?: string;
+    } | null>(null);
     const [loggedIn, setLoggedIn] = useState(Boolean(currentToken.access_token));
     const [username, setUsername] = useState('');
     const [currentSong, setCurrentSong] = useState<NowPlaying | null>(null);
@@ -104,21 +127,43 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         };
     }, [loggedIn]);
 
-    // Load saved colors whenever the song changes
-    const songId = currentSong?.id;
+    // The song being worked on: the picked one, or else the one playing
+    const songId = pickedId ?? currentSong?.id;
+
+    // Load saved colors whenever the song changes. A picked song comes with its details too.
     useEffect(() => {
         if (!songId) return;
         let cancelled = false;
-        getColors(songId).then((colors) => {
-            if (!cancelled) setLoadedColors({ songId, colors });
-        });
+        if (pickedId) {
+            getSong(pickedId)
+                .then((song) => {
+                    if (cancelled) return;
+                    setPicked({ id: pickedId, song });
+                    if (song) setLoadedColors({ songId: pickedId, colors: song.colors });
+                })
+                .catch((err: Error) => {
+                    if (!cancelled) setPicked({ id: pickedId, song: null, error: err.message });
+                });
+        } else {
+            getColors(songId).then((colors) => {
+                if (!cancelled) setLoadedColors({ songId, colors });
+            });
+        }
         return () => {
             cancelled = true;
         };
-    }, [songId]);
+    }, [songId, pickedId]);
     const colors = loadedColors && loadedColors.songId === songId ? loadedColors.colors : [];
     // Editing ends when the song changes
     const editingEntry = editing && editing.entry.songId === songId ? editing.entry : null;
+
+    const pickedLoad = pickedId && picked?.id === pickedId ? picked : null;
+    // The song's details for the display and form; null while a picked song loads
+    const song = pickedId ? (pickedLoad?.song ?? null) : currentSong;
+    // Playback only counts when it's this song that's playing
+    const playingThis = currentSong !== null && currentSong.id === songId;
+
+    const pickSong = (id: string | null) => setSearchParams(id ? { song: id } : {});
 
     const handleLogout = () => {
         logout();
@@ -127,14 +172,20 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         setCurrentSong(null);
     };
 
-    const positionMs = usePlaybackPosition(currentSong, polledAt);
+    const playbackMs = usePlaybackPosition(currentSong, polledAt);
+    const positionMs = playingThis ? playbackMs : null;
 
     const notify = (text: string) => setNotice({ text, id: Date.now() });
 
     // Throws on failure so the form keeps its values and shows the error
     const handleSave = async (request: AddColorRequest) => {
-        if (!currentSong) return;
-        const saved = await saveColor(currentSong, request);
+        // A picked song is already saved; the playing one is saved (or updated) first
+        const saved = pickedId
+            ? await addColor(pickedId, request)
+            : currentSong
+              ? await saveColor(currentSong, request)
+              : null;
+        if (!saved) return;
         setLoadedColors((prev) => ({
             songId: saved.songId,
             colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
@@ -188,8 +239,10 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         (entry) => entry.startMs === undefined || activeIds.has(entry.id),
     );
     // The status light shows the color of the part playing now, like a meter on the device
-    const lightColor =
-        colors.find((entry) => activeIds.has(entry.id))?.color ?? activeColors[0]?.color;
+    // (only when the song in the Studio is the one playing)
+    const lightColor = playingThis
+        ? (colors.find((entry) => activeIds.has(entry.id))?.color ?? activeColors[0]?.color)
+        : undefined;
 
     return (
         <div className="flex flex-col gap-6 p-5 sm:p-7 lg:p-9">
@@ -217,13 +270,41 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     </button>
                 )}
             </div>
-            <SpotifyNowPlaying song={currentSong} activeColors={activeColors} />
-            {currentSong && (
+            <SongSource pickedId={pickedId} onPick={pickSong} />
+            {pickedLoad && !pickedLoad.song ? (
+                <div className="flex flex-col items-start gap-3 well rounded-md p-4">
+                    <p className="text-sm" role="alert">
+                        {pickedLoad.error ?? 'There’s no saved song with this id.'}
+                    </p>
+                    <button type="button" className={keyClass} onClick={() => pickSong(null)}>
+                        Back to now playing
+                    </button>
+                </div>
+            ) : (
+                <SpotifyNowPlaying
+                    song={song}
+                    status={
+                        playingThis
+                            ? currentSong?.isPlaying
+                                ? 'Now playing'
+                                : 'Paused'
+                            : pickedId
+                              ? song
+                                  ? 'Saved song'
+                                  : 'Loading…'
+                              : 'Nothing playing'
+                    }
+                    isPlaying={playingThis && Boolean(currentSong?.isPlaying)}
+                    emptyMessage={pickedId ? '' : undefined}
+                    activeColors={activeColors}
+                />
+            )}
+            {song && (
                 <section className="flex flex-col gap-3">
                     <SectionLabel>Timeline</SectionLabel>
                     <Timeline
                         entries={colors}
-                        durationMs={currentSong.durationMs}
+                        durationMs={song.durationMs}
                         positionMs={positionMs}
                         selectedId={editingEntry?.id}
                         onSelect={startEditing}
@@ -237,7 +318,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     initial={fieldsFromEntry(editingEntry)}
                     color={color}
                     positionMs={positionMs}
-                    durationMs={currentSong?.durationMs}
+                    durationMs={song?.durationMs}
                     onSubmit={handleUpdate}
                     onCancel={stopEditing}
                     onDelete={() => handleDelete(editingEntry.id)}
@@ -251,8 +332,8 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     key={songId ?? 'none'}
                     color={color}
                     positionMs={positionMs}
-                    durationMs={currentSong?.durationMs}
-                    disabled={!currentSong}
+                    durationMs={song?.durationMs}
+                    disabled={!song}
                     status={notice?.text}
                     onSubmit={handleSave}
                 />
@@ -289,7 +370,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     </div>
                 ) : (
                     <p className="text-sm text-silk">
-                        {currentSong
+                        {song
                             ? 'No colors yet for this song.'
                             : 'Colors for the song you’re playing show up here.'}
                     </p>
