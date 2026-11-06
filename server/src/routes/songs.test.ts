@@ -62,6 +62,32 @@ describe('PUT /api/songs/:id', () => {
         expect((await songs().findOne({ id }))?.notes).toEqual([]);
     });
 
+    const album = {
+        id: '3kEtdS2pH6hKcMU9Wioob1',
+        name: 'Strange Trails',
+        url: 'https://open.spotify.com/album/3kEtdS2pH6hKcMU9Wioob1',
+        releaseDate: '2015-04-07',
+        releaseDatePrecision: 'day',
+        type: 'album',
+    };
+    const artistUrls = ['https://open.spotify.com/artist/a', 'https://open.spotify.com/artist/b'];
+
+    it('stores the album and artist links and keeps them when a save leaves them out', async () => {
+        await putSong({ ...song, album, artistUrls });
+        const res = await putSong();
+
+        expect(res.body.album).toEqual(album);
+        expect(res.body.artistUrls).toEqual(artistUrls);
+    });
+
+    it.each([
+        ['a bad release date', { ...album, releaseDate: '7 April 2015' }],
+        ['an unknown album type', { ...album, type: 'ep' }],
+        ['a missing album name', { ...album, name: undefined }],
+    ])('rejects an album with %s with 400', async (_name, badAlbum) => {
+        expect((await putSong({ ...song, album: badAlbum })).status).toBe(400);
+    });
+
     it('rejects invalid song notes with 400', async () => {
         const res = await putSong({ ...song, notes: ['glossy', ' glossy '] });
         expect(res.status).toBe(400);

@@ -64,7 +64,7 @@ Run from the repo root:
 ## How it works
 
 ```
-client/   React app: Spotify login, now playing, color picker
+client/   React app: Explore, song pages, and the Studio (Spotify login, now playing, color picker)
 server/   Express API under /api, backed by MongoDB
 shared/   TypeScript types used by both (Song, ColorEntry, NowPlaying, ...)
 ```

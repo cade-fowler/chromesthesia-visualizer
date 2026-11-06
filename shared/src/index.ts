@@ -4,12 +4,32 @@
 /** A hex color string such as "#ff8800". */
 export type HexColor = string;
 
+/** The album a song is on, from Spotify. */
+export interface Album {
+    /** Spotify album id */
+    id: string;
+    name: string;
+    /** The album's Spotify page */
+    url: string;
+    /** "YYYY", "YYYY-MM" or "YYYY-MM-DD", depending on releaseDatePrecision */
+    releaseDate: string;
+    releaseDatePrecision: 'year' | 'month' | 'day';
+    type: 'album' | 'single' | 'compilation';
+}
+
+/** Song details from Spotify beyond the basics. Songs saved before these existed lack them. */
+export interface SongDetails {
+    album?: Album;
+    /** Each artist's Spotify page, in the same order as the artists */
+    artistUrls?: string[];
+}
+
 /** The song Spotify reports as currently playing, shaped for the UI. */
-export interface NowPlaying {
+export interface NowPlaying extends SongDetails {
     id: string;
     title: string;
-    /** Artist names joined with ", " */
-    artist: string;
+    /** Artist names, as Spotify lists them (a name may itself contain a comma) */
+    artists: string[];
     albumImageUrl?: string;
     songUrl: string;
     isPlaying: boolean;
@@ -20,7 +40,7 @@ export interface NowPlaying {
 }
 
 /** A song's metadata as stored in MongoDB and returned by the API. */
-export interface Song {
+export interface Song extends SongDetails {
     /** Spotify track id */
     id: string;
     title: string;
@@ -63,8 +83,8 @@ export interface SongWithColors extends Song {
 }
 
 /**
- * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes or durationMs keeps
- * the song's current value, so saving from Spotify never wipes notes; send [] to clear them.
+ * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes, durationMs, album or
+ * artistUrls keeps the song's current value, so saving from Spotify never wipes notes; send [] to clear them.
  */
 export type UpsertSongRequest = Omit<Song, 'id'>;
 

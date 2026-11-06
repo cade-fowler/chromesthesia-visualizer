@@ -1,7 +1,6 @@
-import { faSpotify } from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { ColorEntry, NowPlaying } from '@chromesthesia/shared';
 import PlayingAnimation from './PlayingAnimation';
+import AlbumArt from '../../ui/AlbumArt';
 import { textColorOn } from '../../../utils/color';
 import { formatMs } from '../../../utils/time';
 
@@ -22,17 +21,11 @@ const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
 
     return (
         <div className="flex items-center gap-4 well rounded-md p-4 sm:gap-5">
-            {song?.albumImageUrl ? (
-                <img
-                    className="size-18 shrink-0 rounded-[2px] object-cover sm:size-22"
-                    alt={`${song.title} album art`}
-                    src={song.albumImageUrl}
-                />
-            ) : (
-                <div className="grid size-18 shrink-0 place-items-center rounded-[2px] bg-ink/10 text-2xl text-silk sm:size-22">
-                    <FontAwesomeIcon icon={faSpotify} />
-                </div>
-            )}
+            <AlbumArt
+                src={song?.albumImageUrl}
+                alt={song ? `${song.title} album art` : ''}
+                className="size-18 sm:size-22"
+            />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] text-silk uppercase">
                     <PlayingAnimation isPlaying={isPlaying} />
@@ -48,7 +41,9 @@ const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
                         >
                             {song.title}
                         </a>
-                        <span className="truncate text-sm text-silk">{song.artist}</span>
+                        <span className="truncate text-sm text-silk">
+                            {song.artists.join(', ')}
+                        </span>
                     </>
                 ) : (
                     <span className="text-sm text-silk">
