@@ -45,20 +45,28 @@ export const getSong = async (id: string): Promise<SongWithColors | null> => {
     return response.json();
 };
 
-/** Saves the song's metadata, then assigns it a color (for the whole song or one part). */
+/** Saves (creates or updates) the playing song's metadata. Its notes are left as they are. */
+export const saveSong = async (song: NowPlaying): Promise<void> => {
+    const { id, isPlaying: _isPlaying, progressMs: _progressMs, ...rest } = song;
+    const metadata: UpsertSongRequest = rest;
+    const response = await sendJson(songPath(id), 'PUT', metadata);
+    if (!response.ok) throw await errorFrom(response, 'Saving song');
+};
+
+/** Assigns a color to a song that's already saved (for the whole song or one part). */
+export const addColor = async (songId: string, request: AddColorRequest): Promise<ColorEntry> => {
+    const response = await sendJson(`${songPath(songId)}/colors`, 'POST', request);
+    if (!response.ok) throw await errorFrom(response, 'Saving color');
+    return response.json();
+};
+
+/** Saves the playing song's metadata, then assigns it a color. */
 export const saveColor = async (
     song: NowPlaying,
     request: AddColorRequest,
 ): Promise<ColorEntry> => {
-    const { id, isPlaying: _isPlaying, progressMs: _progressMs, ...rest } = song;
-    const metadata: UpsertSongRequest = rest;
-
-    const songResponse = await sendJson(songPath(id), 'PUT', metadata);
-    if (!songResponse.ok) throw await errorFrom(songResponse, 'Saving song');
-
-    const colorResponse = await sendJson(`${songPath(id)}/colors`, 'POST', request);
-    if (!colorResponse.ok) throw await errorFrom(colorResponse, 'Saving color');
-    return colorResponse.json();
+    await saveSong(song);
+    return addColor(song.id, request);
 };
 
 /** Changes some fields of one color entry; null clears a field. */

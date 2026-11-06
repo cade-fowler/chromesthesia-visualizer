@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NowPlaying } from '@chromesthesia/shared';
-import { deleteColor, getColors, getSong, listSongs, saveColor, updateColor } from './databaseAPI';
+import {
+    addColor,
+    deleteColor,
+    getColors,
+    getSong,
+    listSongs,
+    saveColor,
+    updateColor,
+} from './databaseAPI';
 
 const fetchMock = vi.fn<typeof fetch>();
 vi.stubGlobal('fetch', fetchMock);
@@ -189,5 +197,25 @@ describe('getSong', () => {
     it('throws on other error responses', async () => {
         fetchMock.mockResolvedValueOnce(respond(500));
         await expect(getSong('a')).rejects.toThrow('Loading song failed (500)');
+    });
+});
+
+describe('addColor', () => {
+    it('posts only the color, without saving the song', async () => {
+        fetchMock.mockResolvedValueOnce(respond(201, entry));
+
+        await expect(addColor('track 1', { color: '#ff0000' })).resolves.toEqual(entry);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe('/api/songs/track%201/colors');
+        expect(init?.method).toBe('POST');
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
+        await expect(addColor('nope', { color: '#ff0000' })).rejects.toThrow(
+            'Saving color failed (404): Song not found',
+        );
     });
 });

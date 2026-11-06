@@ -1,11 +1,18 @@
-import type { ColorEntry, NowPlaying } from '@chromesthesia/shared';
+import type { ColorEntry, Song } from '@chromesthesia/shared';
 import PlayingAnimation from './PlayingAnimation';
 import AlbumArt from '../../ui/AlbumArt';
 import { textColorOn } from '../../../utils/color';
 import { formatMs } from '../../../utils/time';
 
 interface SpotifyNowPlayingProps {
-    song: NowPlaying | null;
+    /** The song being worked on: the one playing, or a saved song picked in the Studio */
+    song: Pick<Song, 'title' | 'artists' | 'albumImageUrl' | 'songUrl'> | null;
+    /** The label above the title, e.g. "Now playing" or "Saved song" */
+    status: string;
+    /** Animates the playing indicator */
+    isPlaying: boolean;
+    /** Shown in place of the song when there isn't one */
+    emptyMessage?: string;
     /** The colors sounding right now: whole-song colors and the parts under the playhead */
     activeColors: ColorEntry[];
 }
@@ -15,10 +22,14 @@ const describe = (entry: ColorEntry) =>
         ? `${entry.label ?? 'Whole song'} · ${entry.color}`
         : `${entry.label ?? 'Part'} · ${formatMs(entry.startMs)}–${formatMs(entry.endMs!)} · ${entry.color}`;
 
-/** The now-playing display: album art, song, and a bar of every color active right now. */
-const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
-    const isPlaying = song?.isPlaying ?? false;
-
+/** The song display: album art, song, and a bar of every color active right now. */
+const SpotifyNowPlaying = ({
+    song,
+    status,
+    isPlaying,
+    emptyMessage = 'Play a song on Spotify to start adding colors.',
+    activeColors,
+}: SpotifyNowPlayingProps) => {
     return (
         <div className="flex items-center gap-4 well rounded-md p-4 sm:gap-5">
             <AlbumArt
@@ -29,7 +40,7 @@ const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] text-silk uppercase">
                     <PlayingAnimation isPlaying={isPlaying} />
-                    {isPlaying ? 'Now playing' : song ? 'Paused' : 'Nothing playing'}
+                    {status}
                 </span>
                 {song ? (
                     <>
@@ -46,9 +57,7 @@ const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
                         </span>
                     </>
                 ) : (
-                    <span className="text-sm text-silk">
-                        Play a song on Spotify to start adding colors.
-                    </span>
+                    emptyMessage && <span className="text-sm text-silk">{emptyMessage}</span>
                 )}
                 {activeColors.length > 0 && (
                     <div

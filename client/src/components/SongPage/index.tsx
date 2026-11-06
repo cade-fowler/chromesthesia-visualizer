@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import type { SongWithColors } from '@chromesthesia/shared';
 import { getSong } from '../databaseAPI';
 import { formatMs } from '../../utils/time';
@@ -10,6 +10,7 @@ import NotFound from '../NotFound';
 import SectionLabel from '../ui/SectionLabel';
 import Nameplate from '../ui/Nameplate';
 import { keyClass } from '../ui/buttons';
+import { currentToken } from '../ColorPicker/SpotifyElement/SpotifyAPI';
 
 type Load =
     | { status: 'loading' }
@@ -143,14 +144,26 @@ const SongPage = () => {
                             <Tag>{`${colors.length} ${colors.length === 1 ? 'color' : 'colors'}`}</Tag>
                         </div>
                     </div>
-                    <a
-                        className={`${keyClass} self-start sm:self-end`}
-                        href={song.songUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Open in Spotify
-                    </a>
+                    <div className="flex flex-wrap gap-2 self-start sm:self-end">
+                        {/* Only for the owner: a stand-in check until owner login exists. It
+                            hides the key, nothing more; the API has no auth yet. */}
+                        {currentToken.access_token && (
+                            <Link
+                                className={keyClass}
+                                to={`/studio?song=${encodeURIComponent(song.id)}`}
+                            >
+                                Edit in Studio
+                            </Link>
+                        )}
+                        <a
+                            className={keyClass}
+                            href={song.songUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Open in Spotify
+                        </a>
+                    </div>
                 </header>
 
                 <section className="flex flex-col gap-3">
