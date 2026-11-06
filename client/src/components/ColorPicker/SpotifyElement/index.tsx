@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import SongSource from './SongSource';
+import SongNotes from './SongNotes';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from '../../ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
@@ -13,9 +14,9 @@ import Timeline from '../../Timeline';
 import {
     addColor,
     deleteColor,
-    getColors,
     getSong,
     saveColor,
+    saveSongNotes,
     updateColor,
 } from '../../databaseAPI';
 import { insertInSongOrder, replaceInSongOrder } from '../../../utils/colorOrder';
@@ -49,8 +50,9 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     // ?song=<id> pins the Studio to a saved song; without it the Studio follows Spotify
     const [searchParams, setSearchParams] = useSearchParams();
     const pickedId = searchParams.get('song');
-    // The picked song as loaded: null when there's no such song, or an error message
-    const [picked, setPicked] = useState<{
+    // The song's saved record, with the id it was loaded for. song is null when it isn't saved
+    // (yet); error is set when loading failed.
+    const [stored, setStored] = useState<{
         id: string;
         song: SongWithColors | null;
         error?: string;
@@ -130,36 +132,30 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     // The song being worked on: the picked one, or else the one playing
     const songId = pickedId ?? currentSong?.id;
 
-    // Load saved colors whenever the song changes. A picked song comes with its details too.
+    // Load the song's saved record (details, notes and colors) whenever the song changes
     useEffect(() => {
         if (!songId) return;
         let cancelled = false;
-        if (pickedId) {
-            getSong(pickedId)
-                .then((song) => {
-                    if (cancelled) return;
-                    setPicked({ id: pickedId, song });
-                    if (song) setLoadedColors({ songId: pickedId, colors: song.colors });
-                })
-                .catch((err: Error) => {
-                    if (!cancelled) setPicked({ id: pickedId, song: null, error: err.message });
-                });
-        } else {
-            getColors(songId).then((colors) => {
-                if (!cancelled) setLoadedColors({ songId, colors });
+        getSong(songId)
+            .then((song) => {
+                if (cancelled) return;
+                setStored({ id: songId, song });
+                setLoadedColors({ songId, colors: song?.colors ?? [] });
+            })
+            .catch((err: Error) => {
+                if (!cancelled) setStored({ id: songId, song: null, error: err.message });
             });
-        }
         return () => {
             cancelled = true;
         };
-    }, [songId, pickedId]);
+    }, [songId]);
     const colors = loadedColors && loadedColors.songId === songId ? loadedColors.colors : [];
     // Editing ends when the song changes
     const editingEntry = editing && editing.entry.songId === songId ? editing.entry : null;
 
-    const pickedLoad = pickedId && picked?.id === pickedId ? picked : null;
+    const storedLoad = songId && stored?.id === songId ? stored : null;
     // The song's details for the display and form; null while a picked song loads
-    const song = pickedId ? (pickedLoad?.song ?? null) : currentSong;
+    const song = pickedId ? (storedLoad?.song ?? null) : currentSong;
     // Playback only counts when it's this song that's playing
     const playingThis = currentSong !== null && currentSong.id === songId;
 
@@ -191,6 +187,25 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
         }));
         notify('Color added');
+        // The song's first color saved the song itself; load its record so notes can be added
+        if (!storedLoad?.song) {
+            getSong(saved.songId)
+                .then((record) => {
+                    if (record) setStored({ id: record.id, song: record });
+                })
+                .catch((err) => console.error(err));
+        }
+    };
+
+    // Throws on failure so the notes field keeps what was typed
+    const handleSaveNotes = async (notes: string[]) => {
+        if (!storedLoad?.song) return;
+        const updated = await saveSongNotes(storedLoad.song, notes);
+        setStored((prev) =>
+            prev?.song && prev.id === updated.id
+                ? { ...prev, song: { ...prev.song, ...updated } }
+                : prev,
+        );
     };
 
     const startEditing = (entry: ColorEntry) => {
@@ -271,10 +286,10 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                 )}
             </div>
             <SongSource pickedId={pickedId} onPick={pickSong} />
-            {pickedLoad && !pickedLoad.song ? (
+            {pickedId && storedLoad && !storedLoad.song ? (
                 <div className="flex flex-col items-start gap-3 well rounded-md p-4">
                     <p className="text-sm" role="alert">
-                        {pickedLoad.error ?? 'There’s no saved song with this id.'}
+                        {storedLoad.error ?? 'There’s no saved song with this id.'}
                     </p>
                     <button type="button" className={keyClass} onClick={() => pickSong(null)}>
                         Back to now playing
@@ -376,6 +391,14 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     </p>
                 )}
             </section>
+            {song && (
+                <SongNotes
+                    key={songId}
+                    notes={storedLoad?.song?.notes ?? []}
+                    saved={Boolean(storedLoad?.song)}
+                    onSave={handleSaveNotes}
+                />
+            )}
             <div className="mt-2">
                 <Nameplate details={['Model CV-1', 'Color studio']} />
             </div>
