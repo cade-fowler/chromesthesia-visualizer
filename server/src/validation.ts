@@ -18,6 +18,17 @@ export const notes = z
 
 const ms = z.number().int().nonnegative();
 
+const album = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    url: z.url(),
+    releaseDate: z
+        .string()
+        .regex(/^\d{4}(-\d{2}(-\d{2})?)?$/, 'Expected YYYY, YYYY-MM or YYYY-MM-DD'),
+    releaseDatePrecision: z.enum(['year', 'month', 'day']),
+    type: z.enum(['album', 'single', 'compilation']),
+});
+
 export const upsertSongSchema = z.object({
     title: z.string().min(1),
     artists: z.array(z.string()),
@@ -25,6 +36,8 @@ export const upsertSongSchema = z.object({
     songUrl: z.url(),
     durationMs: ms.positive().optional(),
     notes: notes.optional(),
+    album: album.optional(),
+    artistUrls: z.array(z.url()).optional(),
 }) satisfies z.ZodType<UpsertSongRequest>;
 
 const label = z.string().trim().min(1).max(50);

@@ -95,13 +95,47 @@ const SongPage = () => {
                         className="size-28 sm:size-44 lg:size-52"
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                        <span className="font-mono text-[11px] tracking-[0.08em] text-silk uppercase">
+                        <span className="truncate font-mono text-[11px] tracking-[0.08em] text-silk uppercase">
                             Song
+                            {song.album && (
+                                <>
+                                    {' · '}
+                                    <a
+                                        className="hover:text-ink hover:underline"
+                                        href={song.album.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {song.album.name}
+                                    </a>
+                                </>
+                            )}
                         </span>
                         <h1 className="text-3xl leading-none font-bold tracking-[-0.03em] text-balance sm:text-5xl">
                             {song.title}
                         </h1>
-                        <p className="text-base text-silk sm:text-lg">{song.artists.join(', ')}</p>
+                        <p className="text-base text-silk sm:text-lg">
+                            {song.artists.map((artist, i) => {
+                                const url = song.artistUrls?.[i];
+                                return (
+                                    <span key={i}>
+                                        {i > 0 && ', '}
+                                        {url ? (
+                                            <a
+                                                className="hover:text-ink hover:underline"
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                {artist}
+                                            </a>
+                                        ) : (
+                                            artist
+                                        )}
+                                    </span>
+                                );
+                            })}
+                        </p>
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             {song.durationMs !== undefined && (
                                 <Tag>{formatMs(song.durationMs)}</Tag>

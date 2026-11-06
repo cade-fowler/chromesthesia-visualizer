@@ -39,7 +39,7 @@ Server tests use `mongodb-memory-server`, so they need no running MongoDB (the f
 - `key*`, `well`, `panel`, `pad` and `bezel` set `box-shadow`, so don't add Tailwind `ring-*` to them (it also uses `box-shadow`); use `outline-*`. To change a key's text color, use the `!` suffix (`text-danger!`).
 - Layout: a top bar from `md` up, a bottom tab bar on phones (`Navbar`). From `lg` up, pages fill the height and scroll their own panels; below that the whole page scrolls. Use `dvh`, never `vh`.
 - The server env var is `CONNECTION_STRING` (not `MONGODB_URI`); `DB_NAME` defaults to `colordatabase`.
-- `PUT /api/songs/:id` keeps a song's `notes` when the body leaves them out (the Color Picker page never sends them), and `[]` clears them. It keeps `durationMs` the same way, but removes `albumImageUrl` when that's left out.
+- `PUT /api/songs/:id` keeps a song's `notes` when the body leaves them out (the Color Picker page never sends them), and `[]` clears them. It keeps `durationMs`, `album` and `artistUrls` the same way (`artistUrls` is in the same order as `artists`), but removes `albumImageUrl` when that's left out.
 - `PATCH /api/colors/:id` uses `null` to clear a field; the part's times are checked (`partError()`) after merging with the stored entry.
 - `migratedAt` marks color entries made by `npm run migrate:split-colors -w server` (`server/src/migrations/`). It's internal: `toColorEntry()` strips it from API responses.
 - TypeScript is v7 (native compiler); `typescript-eslint`'s peer range lags, so lint stays non-type-aware.

@@ -21,6 +21,15 @@ const nowPlaying: NowPlaying = {
     isPlaying: true,
     progressMs: 61000,
     durationMs: 252000,
+    album: {
+        id: 'album1',
+        name: 'America',
+        url: 'https://open.spotify.com/album/album1',
+        releaseDate: '1971',
+        releaseDatePrecision: 'year',
+        type: 'album',
+    },
+    artistUrls: ['https://open.spotify.com/artist/1', 'https://open.spotify.com/artist/2'],
 };
 
 const entry = {
@@ -47,6 +56,8 @@ describe('saveColor', () => {
             songUrl: 'https://open.spotify.com/track/1',
             albumImageUrl: 'https://i.scdn.co/image/1',
             durationMs: 252000,
+            album: nowPlaying.album,
+            artistUrls: nowPlaying.artistUrls,
         });
         expect(colorUrl).toBe('/api/songs/track%201/colors');
         expect(colorInit?.method).toBe('POST');

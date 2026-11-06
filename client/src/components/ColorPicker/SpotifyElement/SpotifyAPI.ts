@@ -1,4 +1,4 @@
-import type { NowPlaying } from '@chromesthesia/shared';
+import type { Album, NowPlaying, SongDetails } from '@chromesthesia/shared';
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 const AUTHORIZATION_ENDPOINT = 'https://accounts.spotify.com/authorize';
@@ -26,8 +26,17 @@ interface SpotifyPlayback {
         name: string;
         duration_ms: number;
         type: 'track' | 'episode';
-        album: { images: { url: string }[] };
-        artists: { name: string }[];
+        album: {
+            /** null for local files */
+            id: string | null;
+            name: string;
+            images: { url: string }[];
+            release_date: string;
+            release_date_precision: Album['releaseDatePrecision'];
+            album_type: Album['type'];
+            external_urls: { spotify?: string };
+        };
+        artists: { name: string; external_urls: { spotify?: string } }[];
         external_urls: { spotify: string };
     } | null;
 }
@@ -147,6 +156,27 @@ export const getUsername = async (): Promise<string> => {
     return user?.display_name ?? '';
 };
 
+type SpotifyTrack = NonNullable<SpotifyPlayback['item']>;
+
+/** The album and artist links of a track. Local files have neither, so they're left out. */
+export const songDetails = ({ album, artists }: SpotifyTrack): SongDetails => {
+    const artistUrls = artists.map((artist) => artist.external_urls.spotify);
+    return {
+        ...(album.id &&
+            album.external_urls.spotify && {
+                album: {
+                    id: album.id,
+                    name: album.name,
+                    url: album.external_urls.spotify,
+                    releaseDate: album.release_date,
+                    releaseDatePrecision: album.release_date_precision,
+                    type: album.album_type,
+                },
+            }),
+        ...(artistUrls.every(Boolean) && { artistUrls: artistUrls as string[] }),
+    };
+};
+
 export const getNowPlayingItem = async (): Promise<NowPlaying | null> => {
     const playback = await spotifyGet<SpotifyPlayback>(NOW_PLAYING_ENDPOINT);
     // item is null for ads, and podcasts have no album/artists
@@ -162,5 +192,6 @@ export const getNowPlayingItem = async (): Promise<NowPlaying | null> => {
         isPlaying: playback.is_playing,
         progressMs: playback.progress_ms ?? 0,
         durationMs: item.duration_ms,
+        ...songDetails(item),
     };
 };
