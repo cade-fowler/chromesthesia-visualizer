@@ -50,11 +50,8 @@ export const saveColor = async (
     song: NowPlaying,
     request: AddColorRequest,
 ): Promise<ColorEntry> => {
-    const { id, artist, isPlaying: _isPlaying, progressMs: _progressMs, ...rest } = song;
-    const metadata: UpsertSongRequest = {
-        ...rest,
-        artists: artist.split(',').map((a) => a.trim()),
-    };
+    const { id, isPlaying: _isPlaying, progressMs: _progressMs, ...rest } = song;
+    const metadata: UpsertSongRequest = rest;
 
     const songResponse = await sendJson(songPath(id), 'PUT', metadata);
     if (!songResponse.ok) throw await errorFrom(songResponse, 'Saving song');

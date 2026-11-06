@@ -28,8 +28,8 @@ export interface SongDetails {
 export interface NowPlaying extends SongDetails {
     id: string;
     title: string;
-    /** Artist names joined with ", " */
-    artist: string;
+    /** Artist names, as Spotify lists them (a name may itself contain a comma) */
+    artists: string[];
     albumImageUrl?: string;
     songUrl: string;
     isPlaying: boolean;

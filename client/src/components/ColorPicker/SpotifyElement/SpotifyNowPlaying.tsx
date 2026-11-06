@@ -41,7 +41,9 @@ const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
                         >
                             {song.title}
                         </a>
-                        <span className="truncate text-sm text-silk">{song.artist}</span>
+                        <span className="truncate text-sm text-silk">
+                            {song.artists.join(', ')}
+                        </span>
                     </>
                 ) : (
                     <span className="text-sm text-silk">

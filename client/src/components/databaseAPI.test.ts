@@ -15,7 +15,7 @@ const respond = (status: number, body?: unknown) =>
 const nowPlaying: NowPlaying = {
     id: 'track 1',
     title: 'A Horse with No Name',
-    artist: 'America, George Martin',
+    artists: ['America', 'Tyler, The Creator'],
     songUrl: 'https://open.spotify.com/track/1',
     albumImageUrl: 'https://i.scdn.co/image/1',
     isPlaying: true,
@@ -52,7 +52,7 @@ describe('saveColor', () => {
         expect(songInit?.method).toBe('PUT');
         expect(JSON.parse(songInit?.body as string)).toEqual({
             title: 'A Horse with No Name',
-            artists: ['America', 'George Martin'],
+            artists: ['America', 'Tyler, The Creator'],
             songUrl: 'https://open.spotify.com/track/1',
             albumImageUrl: 'https://i.scdn.co/image/1',
             durationMs: 252000,

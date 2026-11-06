@@ -186,7 +186,7 @@ export const getNowPlayingItem = async (): Promise<NowPlaying | null> => {
     return {
         id: item.id,
         title: item.name,
-        artist: item.artists.map((artist) => artist.name).join(', '),
+        artists: item.artists.map((artist) => artist.name),
         albumImageUrl: item.album.images[0]?.url,
         songUrl: item.external_urls.spotify,
         isPlaying: playback.is_playing,
