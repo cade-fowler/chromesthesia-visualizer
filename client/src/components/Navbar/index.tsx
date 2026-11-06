@@ -1,10 +1,6 @@
 import { NavLink, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faMagnifyingGlass,
-    faEyeDropper,
-    type IconDefinition,
-} from '@fortawesome/free-solid-svg-icons';
+import { faCompass, faEyeDropper, type IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
 interface Page {
     to: string;
@@ -13,8 +9,8 @@ interface Page {
 }
 
 const PAGES: Page[] = [
-    { to: '/', icon: faEyeDropper, label: 'Color picker' },
-    { to: '/databaseexplorer', icon: faMagnifyingGlass, label: 'Explorer' },
+    { to: '/', icon: faCompass, label: 'Explore' },
+    { to: '/studio', icon: faEyeDropper, label: 'Studio' },
 ];
 
 const keyType = 'font-bold uppercase tracking-[0.1em]';

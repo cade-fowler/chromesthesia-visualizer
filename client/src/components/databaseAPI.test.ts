@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NowPlaying } from '@chromesthesia/shared';
-import { deleteColor, getColors, saveColor, updateColor } from './databaseAPI';
+import { deleteColor, getColors, getSong, listSongs, saveColor, updateColor } from './databaseAPI';
 
 const fetchMock = vi.fn<typeof fetch>();
 vi.stubGlobal('fetch', fetchMock);
@@ -143,5 +143,40 @@ describe('deleteColor', () => {
     it('throws when the delete fails', async () => {
         fetchMock.mockResolvedValueOnce(respond(500));
         await expect(deleteColor(entry.id)).rejects.toThrow('Deleting color failed (500)');
+    });
+});
+
+describe('listSongs', () => {
+    it('returns the songs', async () => {
+        const songs = [{ id: 'a', title: 'A', artists: ['X'], songUrl: 'u' }];
+        fetchMock.mockResolvedValueOnce(respond(200, songs));
+
+        await expect(listSongs()).resolves.toEqual(songs);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs');
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(500, { error: 'boom' }));
+        await expect(listSongs()).rejects.toThrow('Loading songs failed (500): boom');
+    });
+});
+
+describe('getSong', () => {
+    it('returns the song with its colors', async () => {
+        const song = { id: 'track 1', title: 'A', artists: ['X'], songUrl: 'u', colors: [entry] };
+        fetchMock.mockResolvedValueOnce(respond(200, song));
+
+        await expect(getSong('track 1')).resolves.toEqual(song);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/track%201');
+    });
+
+    it('returns null for an unknown song', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
+        await expect(getSong('nope')).resolves.toBeNull();
+    });
+
+    it('throws on other error responses', async () => {
+        fetchMock.mockResolvedValueOnce(respond(500));
+        await expect(getSong('a')).rejects.toThrow('Loading song failed (500)');
     });
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
-import ColorSwatch from './ColorSwatch/ColorSwatch';
+import ColorSwatch from '../../ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
 import { keyClass } from '../../ui/buttons';
 import SectionLabel from '../../ui/SectionLabel';
@@ -257,7 +258,22 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                 />
             </div>
             <section className="flex flex-col gap-4">
-                <SectionLabel aside={colors.length > 0 ? colors.length : undefined}>
+                {/* A song is only saved once it has a color, so the link never leads to a 404 */}
+                <SectionLabel
+                    aside={
+                        songId && colors.length > 0 ? (
+                            <span className="flex items-center gap-3">
+                                {colors.length}
+                                <Link
+                                    to={`/songs/${encodeURIComponent(songId)}`}
+                                    className="font-body text-[11px] silk hover:text-ink hover:underline"
+                                >
+                                    Song page →
+                                </Link>
+                            </span>
+                        ) : undefined
+                    }
+                >
                     Colors for this song
                 </SectionLabel>
                 {colors.length > 0 ? (

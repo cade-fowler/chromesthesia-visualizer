@@ -2,6 +2,8 @@ import type {
     AddColorRequest,
     ColorEntry,
     NowPlaying,
+    Song,
+    SongWithColors,
     UpdateColorRequest,
     UpsertSongRequest,
 } from '@chromesthesia/shared';
@@ -26,6 +28,21 @@ const errorFrom = async (response: Response, what: string) => {
     const body = await response.json().catch(() => null);
     const detail = body && typeof body.error === 'string' ? `: ${body.error}` : '';
     return new Error(`${what} failed (${response.status})${detail}`);
+};
+
+/** Lists saved songs (the API returns up to 50). */
+export const listSongs = async (): Promise<Song[]> => {
+    const response = await fetch('/api/songs');
+    if (!response.ok) throw await errorFrom(response, 'Loading songs');
+    return response.json();
+};
+
+/** Gets one song with its colors in song order, or null if there's no such song. */
+export const getSong = async (id: string): Promise<SongWithColors | null> => {
+    const response = await fetch(songPath(id));
+    if (response.status === 404) return null;
+    if (!response.ok) throw await errorFrom(response, 'Loading song');
+    return response.json();
 };
 
 /** Saves the song's metadata, then assigns it a color (for the whole song or one part). */
