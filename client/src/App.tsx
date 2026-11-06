@@ -1,9 +1,11 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import Layout from './components/Layout';
 import ColorPicker from './components/ColorPicker';
 import Explore from './components/Explore';
 import SongPage from './components/SongPage';
 import NotFound from './components/NotFound';
+import Login from './components/Login';
+import RequireOwner from './auth/RequireOwner';
 
 /**
  * Spotify's login redirect goes to the site's origin (the registered redirect URI), which is
@@ -23,7 +25,15 @@ function App() {
         <Routes>
             <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
-                <Route path="studio" element={<ColorPicker />} />
+                <Route
+                    path="studio"
+                    element={
+                        <RequireOwner>
+                            <ColorPicker />
+                        </RequireOwner>
+                    }
+                />
+                <Route path="login" element={<Login />} />
                 <Route path="songs/:songId" element={<SongPage />} />
                 <Route path="*" element={<NotFound />} />
             </Route>

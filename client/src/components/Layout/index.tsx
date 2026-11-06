@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { TabBar, TopBar } from '../Navbar';
 
 // dvh rather than vh so phones don't hide the bottom of the page behind the browser's toolbar.

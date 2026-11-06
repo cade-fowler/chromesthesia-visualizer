@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
 import type { ApiError, ColorEntry } from '@chromesthesia/shared';
+import { requireOwner } from '../auth.js';
 import { colors, toColorEntry, type ColorDoc } from '../db.js';
 import { partError, updateColorSchema } from '../validation.js';
 
@@ -12,8 +13,8 @@ type IdParams = { id: string };
 // ObjectId.isValid() also accepts any 12-character string, so check the hex form directly
 const objectIdHex = /^[0-9a-f]{24}$/i;
 
-// Change some fields of one color entry; null clears a field (owner-only once auth lands)
-router.patch<IdParams, ColorEntry | ApiError>('/:id', async (req, res) => {
+// Change some fields of one color entry; null clears a field
+router.patch<IdParams, ColorEntry | ApiError>('/:id', requireOwner, async (req, res) => {
     if (!objectIdHex.test(req.params.id)) {
         return res.status(400).json({ error: 'Invalid color id' });
     }
@@ -45,8 +46,8 @@ router.patch<IdParams, ColorEntry | ApiError>('/:id', async (req, res) => {
     res.json(toColorEntry(merged));
 });
 
-// Remove one color entry (owner-only once auth lands)
-router.delete<IdParams, ApiError>('/:id', async (req, res) => {
+// Remove one color entry
+router.delete<IdParams, ApiError>('/:id', requireOwner, async (req, res) => {
     if (!objectIdHex.test(req.params.id)) {
         return res.status(400).json({ error: 'Invalid color id' });
     }

@@ -1,6 +1,8 @@
 import type {
     AddColorRequest,
+    AuthStatus,
     ColorEntry,
+    LoginRequest,
     NowPlaying,
     Song,
     SongWithColors,
@@ -97,4 +99,36 @@ export const deleteColor = async (id: string): Promise<void> => {
     if (!response.ok && response.status !== 404) {
         throw new Error(`Deleting color failed (${response.status})`);
     }
+};
+
+/** Whether this browser is logged in as the owner. */
+export const getAuthStatus = async (): Promise<AuthStatus> => {
+    const response = await fetch('/api/auth/me');
+    if (!response.ok) throw await errorFrom(response, 'Checking login');
+    return response.json();
+};
+
+/** Thrown by login() when there have been too many wrong passwords. */
+export class TooManyAttemptsError extends Error {
+    constructor(public retryAfterSeconds: number) {
+        super('Too many attempts');
+    }
+}
+
+/** Logs in as the owner. Resolves false for a wrong password. */
+export const login = async (password: string): Promise<boolean> => {
+    const body: LoginRequest = { password };
+    const response = await sendJson('/api/auth/login', 'POST', body);
+    if (response.status === 401) return false;
+    if (response.status === 429) {
+        throw new TooManyAttemptsError(Number(response.headers.get('Retry-After')) || 0);
+    }
+    if (!response.ok) throw await errorFrom(response, 'Logging in');
+    return true;
+};
+
+/** Logs out of the owner session. */
+export const logout = async (): Promise<void> => {
+    const response = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!response.ok) throw await errorFrom(response, 'Logging out');
 };

@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import type { AddColorRequest, UpdateColorRequest, UpsertSongRequest } from '@chromesthesia/shared';
+import type {
+    AddColorRequest,
+    LoginRequest,
+    UpdateColorRequest,
+    UpsertSongRequest,
+} from '@chromesthesia/shared';
 
 // Accepts #rgb or #rrggbb in any case; stores lowercase #rrggbb so "#FFF" and "#ffffff" match
 export const hexColor = z
@@ -84,3 +89,7 @@ export const listQuerySchema = z.object({
     title: z.string().optional(),
     artist: z.string().optional(),
 });
+
+export const loginSchema = z.object({
+    password: z.string().min(1).max(1024),
+}) satisfies z.ZodType<LoginRequest>;

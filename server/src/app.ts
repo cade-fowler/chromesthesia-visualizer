@@ -2,13 +2,23 @@ import 'express-async-errors';
 import express, { type ErrorRequestHandler } from 'express';
 import songs from './routes/songs.js';
 import colors from './routes/colors.js';
+import { authRouter } from './routes/auth.js';
+import type { AuthConfig } from './auth.js';
+import { securityHeaders } from './security.js';
 
-/** Builds the Express app without starting it, so tests can drive it directly. */
-export function createApp() {
+/**
+ * Builds the Express app without starting it, so tests can drive it directly. The owner login
+ * config is passed in rather than read from the env, so tests can use known values.
+ */
+export function createApp(auth: AuthConfig) {
     const app = express();
+    // Read by requireOwner and the auth routes
+    app.locals.auth = auth;
 
+    app.use(securityHeaders());
     app.use(express.json());
 
+    app.use('/api/auth', authRouter());
     app.use('/api/songs', songs);
     app.use('/api/colors', colors);
 
