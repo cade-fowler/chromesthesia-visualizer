@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import Layout from './components/Layout';
 import ColorPicker from './components/ColorPicker';
 import Explore from './components/Explore';

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { useOwner } from '../../auth/OwnerContext';
 import { safeNext } from '../../auth/next';
 import { login, TooManyAttemptsError } from '../databaseAPI';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 import type { SongWithColors } from '@chromesthesia/shared';
 import { getSong } from '../databaseAPI';
 import { formatMs } from '../../utils/time';

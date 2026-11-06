@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCompass, faEyeDropper, type IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import { useOwner } from '../../auth/OwnerContext';
