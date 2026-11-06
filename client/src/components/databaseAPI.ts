@@ -17,12 +17,6 @@ const sendJson = (url: string, method: string, body: unknown) =>
         body: JSON.stringify(body),
     });
 
-export const getColors = async (songId: string): Promise<ColorEntry[]> => {
-    const response = await fetch(`${songPath(songId)}/colors`);
-    if (!response.ok) return [];
-    return response.json();
-};
-
 /** Reads the server's error message, falling back to the status code. */
 const errorFrom = async (response: Response, what: string) => {
     const body = await response.json().catch(() => null);
@@ -51,6 +45,27 @@ export const saveSong = async (song: NowPlaying): Promise<void> => {
     const metadata: UpsertSongRequest = rest;
     const response = await sendJson(songPath(id), 'PUT', metadata);
     if (!response.ok) throw await errorFrom(response, 'Saving song');
+};
+
+/**
+ * Replaces a saved song's notes ([] clears them). The PUT needs the song's details too, so they
+ * are sent back as they are.
+ */
+export const saveSongNotes = async (song: Song, notes: string[]): Promise<Song> => {
+    const { title, artists, albumImageUrl, songUrl, durationMs, album, artistUrls } = song;
+    const body: UpsertSongRequest = {
+        title,
+        artists,
+        albumImageUrl,
+        songUrl,
+        durationMs,
+        album,
+        artistUrls,
+        notes,
+    };
+    const response = await sendJson(songPath(song.id), 'PUT', body);
+    if (!response.ok) throw await errorFrom(response, 'Saving notes');
+    return response.json();
 };
 
 /** Assigns a color to a song that's already saved (for the whole song or one part). */

@@ -6,13 +6,10 @@ import { emptyFields, readFields, type ColorEntryFields } from '../../../utils/c
 import { formatMs, parseTime } from '../../../utils/time';
 import { textColorOn } from '../../../utils/color';
 import { keyClass, primaryKeyClass, smallKeyClass } from '../../ui/buttons';
+import { fieldLabelClass, inputClass } from '../../ui/fields';
 import SectionLabel from '../../ui/SectionLabel';
 
 const LABEL_SUGGESTIONS = ['intro', 'verse', 'pre-chorus', 'chorus', 'bridge', 'drop', 'outro'];
-
-const inputClass = 'well h-9 w-full min-w-0 px-2.5 font-mono text-sm placeholder:text-silk/70';
-
-const fieldLabelClass = 'silk text-[10px]';
 
 interface ColorEntryFormProps {
     /** The picker's color, which is what gets saved */

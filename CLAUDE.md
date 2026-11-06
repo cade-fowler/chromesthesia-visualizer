@@ -48,7 +48,8 @@ Server tests use `mongodb-memory-server`, so they need no running MongoDB (the f
 
 - Public read, owner-only write. The API currently has **no auth** — any new write route must be designed to sit behind a future `requireOwner` middleware; don't deploy publicly before auth lands.
 - Write routes are `PUT /api/songs/:id`, `POST /api/songs/:id/colors`, `PATCH /api/colors/:id` and `DELETE /api/colors/:id`; all need `requireOwner` once auth lands.
-- Not built yet: editing song-level notes (the song page shows them), search and a real home page, Similar songs, deleting a song (would need to cascade to its colors), and analytics endpoints.
+- Song-level notes are edited in the Studio (`SongNotes`, saved with `saveSongNotes()`, which re-sends the song's details because `PUT` needs them) and shown on the song page.
+- Not built yet: search and a real home page, Similar songs, deleting a song (would need to cascade to its colors), and analytics endpoints.
 
 ## Conventions
 

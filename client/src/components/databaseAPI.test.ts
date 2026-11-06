@@ -3,10 +3,10 @@ import type { NowPlaying } from '@chromesthesia/shared';
 import {
     addColor,
     deleteColor,
-    getColors,
     getSong,
     listSongs,
     saveColor,
+    saveSongNotes,
     updateColor,
 } from './databaseAPI';
 
@@ -132,19 +132,6 @@ describe('updateColor', () => {
     });
 });
 
-describe('getColors', () => {
-    it("returns the song's entries", async () => {
-        fetchMock.mockResolvedValueOnce(respond(200, [entry]));
-        await expect(getColors('track 1')).resolves.toEqual([entry]);
-        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/track%201/colors');
-    });
-
-    it('returns no entries for an unknown song', async () => {
-        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
-        await expect(getColors('missing')).resolves.toEqual([]);
-    });
-});
-
 describe('deleteColor', () => {
     it('sends DELETE for the entry', async () => {
         fetchMock.mockResolvedValueOnce(respond(204));
@@ -216,6 +203,37 @@ describe('addColor', () => {
         fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
         await expect(addColor('nope', { color: '#ff0000' })).rejects.toThrow(
             'Saving color failed (404): Song not found',
+        );
+    });
+});
+
+describe('saveSongNotes', () => {
+    const song = {
+        id: 'track 1',
+        title: 'A Horse with No Name',
+        artists: ['America'],
+        songUrl: 'https://open.spotify.com/track/1',
+        albumImageUrl: 'https://i.scdn.co/image/1',
+        durationMs: 252000,
+        notes: ['dusty'],
+    };
+
+    it('puts the song back with its new notes, keeping its details', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, { ...song, notes: ['dry', 'warm'] }));
+
+        await saveSongNotes({ ...song, colors: [entry] } as typeof song, ['dry', 'warm']);
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe('/api/songs/track%201');
+        expect(init?.method).toBe('PUT');
+        const { id: _id, ...details } = song;
+        expect(JSON.parse(init?.body as string)).toEqual({ ...details, notes: ['dry', 'warm'] });
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(400, { error: 'Notes must not repeat' }));
+        await expect(saveSongNotes(song, [])).rejects.toThrow(
+            'Saving notes failed (400): Notes must not repeat',
         );
     });
 });
