@@ -16,6 +16,15 @@ const song = {
     albumImageUrl: 'https://i.scdn.co/image/abc',
 };
 
+const album = {
+    id: '3kEtdS2pH6hKcMU9Wioob1',
+    name: 'Strange Trails',
+    url: 'https://open.spotify.com/album/3kEtdS2pH6hKcMU9Wioob1',
+    releaseDate: '2015-04-07',
+    releaseDatePrecision: 'day',
+    type: 'album',
+};
+
 const putSong = (body: object = song, songId = id) => api.put(`/api/songs/${songId}`).send(body);
 const addColor = (body: object, songId = id) => api.post(`/api/songs/${songId}/colors`).send(body);
 
@@ -61,14 +70,6 @@ describe('PUT /api/songs/:id', () => {
         expect((await songs().findOne({ id }))?.notes).toEqual([]);
     });
 
-    const album = {
-        id: '3kEtdS2pH6hKcMU9Wioob1',
-        name: 'Strange Trails',
-        url: 'https://open.spotify.com/album/3kEtdS2pH6hKcMU9Wioob1',
-        releaseDate: '2015-04-07',
-        releaseDatePrecision: 'day',
-        type: 'album',
-    };
     const artistUrls = ['https://open.spotify.com/artist/a', 'https://open.spotify.com/artist/b'];
 
     it('stores the album and artist links and keeps them when a save leaves them out', async () => {
@@ -261,13 +262,89 @@ describe('GET /api/songs', () => {
         expect((await api.get('/api/songs/missing/colors')).status).toBe(404);
     });
 
-    it('lists songs without embedding colors', async () => {
+    it("lists songs with their colors' hex values in song order, newest first", async () => {
         await seed();
         const res = await api.get('/api/songs');
 
-        expect(res.body).toHaveLength(2);
-        expect(res.body[0]).not.toHaveProperty('colors');
+        expect(res.status).toBe(200);
+        // otherId got its first color last, so it comes first
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual([otherId, id]);
+        expect(res.body[1]).toMatchObject({ id, ...song, colors: ['#ff0000', '#00ff00'] });
+        expect(res.body[1].addedAt).toEqual(expect.any(String));
         expect(res.body[0]).not.toHaveProperty('_id');
+        expect(res.body[0]).not.toHaveProperty('colorDocs');
+    });
+
+    it('dates a song by its first color, and lists songs with no colors last', async () => {
+        await putSong();
+        await putSong({ ...song, title: 'Other' }, otherId);
+        await putSong({ ...song, title: 'Bare' }, 'bare');
+        await addColor({ color: '#ff0000' });
+        await addColor({ color: '#00ff00' }, otherId);
+        await addColor({ color: '#0000ff' }); // a later color doesn't move id up
+
+        const res = await api.get('/api/songs');
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual([otherId, id, 'bare']);
+        expect(res.body[2]).toMatchObject({ colors: [] });
+        expect(res.body[2]).not.toHaveProperty('addedAt');
+    });
+
+    it('searches titles, artists and album names, ignoring case', async () => {
+        await putSong({ ...song, title: 'Ontario' });
+        await putSong({ ...song, title: 'Hurricane', artists: ['Someone'] }, 'b');
+        await putSong(
+            {
+                ...song,
+                title: 'Third',
+                artists: ['Nobody'],
+                album: { ...album, name: 'Ontario Sessions' },
+            },
+            'c',
+        );
+        const ids = async (q: string) =>
+            (await api.get('/api/songs').query({ q })).body.map((s: { id: string }) => s.id).sort();
+
+        expect(await ids('ontario')).toEqual([id, 'c']);
+        expect(await ids('LOWSWIM')).toEqual([id]);
+        expect(await ids('hurr')).toEqual(['b']);
+        expect(await ids('nothing')).toEqual([]);
+    });
+
+    it('treats regex characters in a search as plain text', async () => {
+        await putSong({ ...song, title: 'Song (Live)' });
+        await putSong({ ...song, title: 'Song Live' }, 'b');
+
+        const res = await api.get('/api/songs').query({ q: '(live)' });
+        expect(res.status).toBe(200);
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual([id]);
+        expect((await api.get('/api/songs').query({ q: '.*' })).body).toEqual([]);
+    });
+
+    it('filters by the decade the album came out', async () => {
+        await putSong({ ...song, album: { ...album, releaseDate: '1994-03-01' } });
+        await putSong({ ...song, album: { ...album, releaseDate: '2016' } }, 'b');
+        await putSong(song, 'c'); // no album
+
+        const res = await api.get('/api/songs').query({ decade: '1990' });
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual([id]);
+    });
+
+    it('limits how many songs come back', async () => {
+        await putSong();
+        await putSong(song, 'b');
+        await putSong(song, 'c');
+
+        expect((await api.get('/api/songs').query({ limit: '2' })).body).toHaveLength(2);
+    });
+
+    it.each([
+        ['a decade not ending in 0', { decade: '1995' }],
+        ['a decade that is not a number', { decade: 'abcd' }],
+        ['a limit of 0', { limit: '0' }],
+        ['a limit over 200', { limit: '201' }],
+        ['a limit that is not a number', { limit: 'ten' }],
+    ])('rejects %s with 400', async (_label, query) => {
+        expect((await api.get('/api/songs').query(query)).status).toBe(400);
     });
 
     it('filters the list by artist', async () => {
@@ -278,8 +355,46 @@ describe('GET /api/songs', () => {
     });
 
     it('rejects Mongo operators in query params', async () => {
-        const res = await api.get('/api/songs?title[$ne]=x');
-        expect(res.status).toBe(400);
+        expect((await api.get('/api/songs?title[$ne]=x')).status).toBe(400);
+        expect((await api.get('/api/songs?q[$ne]=x')).status).toBe(400);
+        expect((await api.get('/api/songs/random?not[$ne]=x')).status).toBe(400);
+    });
+});
+
+describe('GET /api/songs/random', () => {
+    it('returns 404 when no song has colors', async () => {
+        expect((await api.get('/api/songs/random')).status).toBe(404);
+        await putSong();
+        expect((await api.get('/api/songs/random')).status).toBe(404);
+    });
+
+    it('returns a song that has colors, with its colors', async () => {
+        await putSong();
+        await putSong({ ...song, title: 'Bare' }, 'bare');
+        await addColor({ color: '#ff0000' });
+
+        for (let i = 0; i < 5; i++) {
+            const res = await api.get('/api/songs/random');
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({ id, ...song });
+            expect(res.body.colors.map((c: { color: string }) => c.color)).toEqual(['#ff0000']);
+            expect(res.body).not.toHaveProperty('_id');
+            expect(res.body).not.toHaveProperty('anyColor');
+        }
+    });
+
+    it('skips the song given as ?not, unless it is the only one', async () => {
+        await putSong();
+        await putSong({ ...song, title: 'Other' }, 'other');
+        await addColor({ color: '#ff0000' });
+        await addColor({ color: '#00ff00' }, 'other');
+
+        for (let i = 0; i < 5; i++) {
+            const res = await api.get('/api/songs/random').query({ not: id });
+            expect(res.body.id).toBe('other');
+        }
+        await colors().deleteMany({ songId: 'other' });
+        expect((await api.get('/api/songs/random').query({ not: id })).body.id).toBe(id);
     });
 });
 

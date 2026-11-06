@@ -2,6 +2,7 @@ import 'express-async-errors';
 import express, { type ErrorRequestHandler } from 'express';
 import songs from './routes/songs.js';
 import colors from './routes/colors.js';
+import stats from './routes/stats.js';
 import { authRouter } from './routes/auth.js';
 import type { AuthConfig } from './auth.js';
 import { securityHeaders } from './security.js';
@@ -21,6 +22,7 @@ export function createApp(auth: AuthConfig) {
     app.use('/api/auth', authRouter());
     app.use('/api/songs', songs);
     app.use('/api/colors', colors);
+    app.use('/api/stats', stats);
 
     // Unknown API routes
     app.use('/api', (_req, res) => {

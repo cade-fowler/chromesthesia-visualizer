@@ -35,7 +35,8 @@ const SongSource = ({ pickedId, onPick }: SongSourceProps) => {
     useEffect(() => {
         if (!needsSongs) return;
         let cancelled = false;
-        listSongs()
+        // Its filter runs in the browser, so load as many as the API allows
+        listSongs({ limit: 200 })
             .then((list) => {
                 if (!cancelled) setSongs(list);
             })

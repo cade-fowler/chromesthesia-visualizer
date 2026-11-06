@@ -2,9 +2,12 @@ import type {
     AddColorRequest,
     AuthStatus,
     ColorEntry,
+    LibraryStats,
+    ListSongsQuery,
     LoginRequest,
     NowPlaying,
     Song,
+    SongSummary,
     SongWithColors,
     UpdateColorRequest,
     UpsertSongRequest,
@@ -26,10 +29,40 @@ const errorFrom = async (response: Response, what: string) => {
     return new Error(`${what} failed (${response.status})${detail}`);
 };
 
-/** Lists saved songs (the API returns up to 50). */
-export const listSongs = async (): Promise<Song[]> => {
-    const response = await fetch('/api/songs');
+/**
+ * Lists saved songs, newest first, each with its colors' hex values. Without a limit the API
+ * returns up to 50.
+ */
+export const listSongs = async (
+    query: ListSongsQuery = {},
+    signal?: AbortSignal,
+): Promise<SongSummary[]> => {
+    const params = new URLSearchParams();
+    if (query.q) params.set('q', query.q);
+    if (query.decade !== undefined) params.set('decade', String(query.decade));
+    if (query.limit !== undefined) params.set('limit', String(query.limit));
+    const search = params.toString();
+    const response = await fetch(search ? `/api/songs?${search}` : '/api/songs', { signal });
     if (!response.ok) throw await errorFrom(response, 'Loading songs');
+    return response.json();
+};
+
+/**
+ * Gets a random song that has colors, other than `not` when there's another one. Resolves null
+ * when no song has colors yet.
+ */
+export const getRandomSong = async (not?: string): Promise<SongWithColors | null> => {
+    const url = not ? `/api/songs/random?not=${encodeURIComponent(not)}` : '/api/songs/random';
+    const response = await fetch(url);
+    if (response.status === 404) return null;
+    if (!response.ok) throw await errorFrom(response, 'Loading a song');
+    return response.json();
+};
+
+/** Counts across everything logged: songs, colors, artists, parts and decades. */
+export const getStats = async (): Promise<LibraryStats> => {
+    const response = await fetch('/api/stats');
+    if (!response.ok) throw await errorFrom(response, 'Loading stats');
     return response.json();
 };
 
