@@ -4,6 +4,7 @@ import songs from './routes/songs.js';
 import colors from './routes/colors.js';
 import { authRouter } from './routes/auth.js';
 import type { AuthConfig } from './auth.js';
+import { securityHeaders } from './security.js';
 
 /**
  * Builds the Express app without starting it, so tests can drive it directly. The owner login
@@ -14,6 +15,7 @@ export function createApp(auth: AuthConfig) {
     // Read by requireOwner and the auth routes
     app.locals.auth = auth;
 
+    app.use(securityHeaders());
     app.use(express.json());
 
     app.use('/api/auth', authRouter());
