@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import type { Song } from '@chromesthesia/shared';
 import { listSongs } from '../databaseAPI';
+import { useOwner } from '../../auth/OwnerContext';
 import AlbumArt from '../ui/AlbumArt';
 import SectionLabel from '../ui/SectionLabel';
 import Nameplate from '../ui/Nameplate';
 
 /** The home page. For now, a list of saved songs that each open their song page. */
 const Explore = () => {
+    const { owner } = useOwner();
     const [songs, setSongs] = useState<Song[] | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +38,9 @@ const Explore = () => {
                 ) : !songs ? (
                     <p className="text-sm text-silk">Loading…</p>
                 ) : songs.length === 0 ? (
-                    <p className="text-sm text-silk">No songs yet. Add colors from the Studio.</p>
+                    <p className="text-sm text-silk">
+                        {owner ? 'No songs yet. Add colors from the Studio.' : 'No songs yet.'}
+                    </p>
                 ) : (
                     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {songs.map((song) => (

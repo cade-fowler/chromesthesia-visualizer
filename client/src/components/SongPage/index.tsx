@@ -10,7 +10,7 @@ import NotFound from '../NotFound';
 import SectionLabel from '../ui/SectionLabel';
 import Nameplate from '../ui/Nameplate';
 import { keyClass } from '../ui/buttons';
-import { currentToken } from '../ColorPicker/SpotifyElement/SpotifyAPI';
+import { useOwner } from '../../auth/OwnerContext';
 
 type Load =
     | { status: 'loading' }
@@ -27,6 +27,7 @@ const Tag = ({ children }: { children: string }) => (
 /** The public page for one song: its details, color timeline, colors and notes. */
 const SongPage = () => {
     const { songId = '' } = useParams();
+    const { owner } = useOwner();
     // Stored with the id it was loaded for, so another song's data is never shown
     const [load, setLoad] = useState<{ songId: string; load: Load } | null>(null);
 
@@ -145,9 +146,7 @@ const SongPage = () => {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-2 self-start sm:self-end">
-                        {/* Only for the owner: a stand-in check until owner login exists. It
-                            hides the key, nothing more; the API has no auth yet. */}
-                        {currentToken.access_token && (
+                        {owner && (
                             <Link
                                 className={keyClass}
                                 to={`/studio?song=${encodeURIComponent(song.id)}`}
