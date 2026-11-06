@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@chromesthesia/shared": "*",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",

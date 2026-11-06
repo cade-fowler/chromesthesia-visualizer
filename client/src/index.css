@@ -1,35 +1,26 @@
 @import 'tailwindcss';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
-@font-face {
-    font-family: 'Helvetica Neue';
-    src: url('./assets/fonts/helvetica-neu.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Coolvetica';
-    src:
-        url('./assets/fonts/CoolveticaRg-Regular.woff2') format('woff2'),
-        url('./assets/fonts/CoolveticaRg-Regular.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-}
-
-/* Design tokens. Each one generates utilities, e.g. --color-medium -> bg-medium, text-medium */
+/*
+ * "Bench gear": the site is a light-grey device. The interface stays neutral (greys and
+ * near-black) so the only real colors on screen are the album art and the song's colors.
+ * Each token generates utilities, e.g. --color-panel -> bg-panel, text-panel.
+ */
 @theme {
-    --color-light: #f5f5f5;
-    --color-medium: #6b7a85;
-    --color-dark: #1c1c1c;
-    --color-accent: #44aef3;
-    --color-complement: #d3cfc4;
-    --color-spotify: #1ad861;
-    --color-panel: #1b202c;
+    --color-case: #d6d5d0; /* the device's body: page background */
+    --color-case-dark: #cfcec9; /* bars and the picker's bay */
+    --color-panel: #e2e1dc; /* raised panels */
+    --color-display: #b9bbb3; /* unlit, reflective LCD: displays and inputs */
+    --color-key: #efeeea;
+    --color-key-down: #c6c5c0;
+    --color-edge: #b2b1ac; /* hairlines between parts of the case */
+    --color-ink: #1c1c1d;
+    --color-silk: #55565a; /* printed labels */
+    --color-danger: #9b2c22;
 
-    --font-display: 'Coolvetica', sans-serif;
     --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-
-    --height-navbar: 60px;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
 
     /* Now-playing equalizer bars (animate-playing) */
     --animate-playing: playing 2.2s ease infinite alternate;
@@ -52,13 +43,172 @@
     }
 }
 
+/* A raised key. Combine with size/type classes; see components/ui/buttons.ts */
+@utility key {
+    background-color: var(--color-key);
+    color: var(--color-ink);
+    border-radius: 5px;
+    box-shadow:
+        inset 0 1px 0 #fff,
+        0 3px 0 #a6a5a0;
+    transition:
+        transform 80ms,
+        box-shadow 80ms,
+        background-color 120ms;
+    &:hover:not(:disabled) {
+        background-color: #f7f6f3;
+    }
+    &:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow:
+            inset 0 1px 0 #fff,
+            0 1px 0 #a6a5a0;
+    }
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+}
+
+/* The one dark key: a form's main action */
+@utility key-dark {
+    background-color: #3a3b3d;
+    color: #efeeea;
+    border-radius: 5px;
+    box-shadow:
+        inset 0 1px 0 #57585b,
+        0 3px 0 #1f1f20;
+    transition:
+        transform 80ms,
+        box-shadow 80ms,
+        background-color 120ms;
+    &:hover:not(:disabled) {
+        background-color: #454648;
+    }
+    &:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow:
+            inset 0 1px 0 #57585b,
+            0 1px 0 #1f1f20;
+    }
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+}
+
+/* A key that is held down: the current page, a selected option */
+@utility key-down {
+    background-color: var(--color-key-down);
+    color: var(--color-ink);
+    border-radius: 5px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Recessed reflective display: now playing, text inputs, readouts */
+@utility well {
+    background-color: var(--color-display);
+    color: var(--color-ink);
+    border-radius: 4px;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.25),
+        0 1px 0 #efeee9;
+}
+
+/* A raised panel of the case */
+@utility panel {
+    background-color: var(--color-panel);
+    border-radius: 8px;
+    box-shadow:
+        inset 0 1px 0 #f2f1ed,
+        0 1px 0 #aeada8,
+        0 2px 0 #c4c3be;
+}
+
+/* Four corner screws; give the element at least 20px of padding */
+@utility screws {
+    background-image:
+        radial-gradient(circle at 9px 9px, #8f8e89 0 2.4px, #f6f5f1 3px, transparent 3.6px),
+        radial-gradient(
+            circle at calc(100% - 9px) 9px,
+            #8f8e89 0 2.4px,
+            #f6f5f1 3px,
+            transparent 3.6px
+        ),
+        radial-gradient(
+            circle at 9px calc(100% - 9px),
+            #8f8e89 0 2.4px,
+            #f6f5f1 3px,
+            transparent 3.6px
+        ),
+        radial-gradient(
+            circle at calc(100% - 9px) calc(100% - 9px),
+            #8f8e89 0 2.4px,
+            #f6f5f1 3px,
+            transparent 3.6px
+        );
+}
+
+/* A color pad: a swatch with a soft bevel (it reads as a shadow, not another color) */
+@utility pad {
+    border-radius: 8px;
+    box-shadow:
+        inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4),
+        0 2px 0 #a6a5a0;
+}
+
+/* The bezel around the color picker; its background is the picked color */
+@utility bezel {
+    border-radius: 10px;
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.3),
+        0 0 0 1px #9e9d98,
+        0 0 0 7px var(--color-panel),
+        0 0 0 8px var(--color-edge);
+}
+
+/* Printed label text. Set the size separately */
+@utility silk {
+    color: var(--color-silk);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
 @layer base {
     body {
-        @apply antialiased;
+        @apply bg-case font-body text-ink antialiased;
     }
 
     input,
-    textarea {
-        font-family: var(--font-body);
+    textarea,
+    button {
+        font: inherit;
     }
+
+    :focus-visible {
+        outline: 2px solid var(--color-ink);
+        outline-offset: 2px;
+    }
+}
+
+/* react-colorful injects unlayered CSS, so these use two classes to win on specificity */
+.bezel .react-colorful {
+    width: 100%;
+    height: 100%;
+    gap: 12px;
+}
+.bezel .react-colorful__saturation {
+    border-radius: 6px;
+    border-bottom: 0;
+}
+.bezel .react-colorful__hue {
+    flex: none;
+    height: 20px;
+    border-radius: 4px;
+}
+.bezel .react-colorful__pointer {
+    width: 24px;
+    height: 24px;
 }

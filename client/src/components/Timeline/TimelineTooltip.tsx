@@ -25,19 +25,19 @@ const TimelineTooltip = ({ entry, centerPercent }: TimelineTooltipProps) => {
     return (
         <div
             role="tooltip"
-            className="pointer-events-none absolute bottom-full z-30 mb-2 w-max max-w-72 rounded-[8px] border-2 border-medium bg-dark px-3 py-2 text-sm text-light shadow-lg"
+            className="pointer-events-none absolute bottom-full z-30 mb-2 w-max max-w-72 rounded-md bg-panel px-3 py-2 text-sm shadow-[0_1px_0_#aeada8,0_6px_16px_rgba(0,0,0,0.18)]"
             style={position}
         >
             <div className="flex items-center gap-2">
                 <span
-                    className="inline-block size-3 shrink-0 rounded-full ring-1 ring-light/50"
+                    className="inline-block size-3 shrink-0 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
                     style={{ backgroundColor: entry.color }}
                 />
                 {entry.label && <span className="font-bold">{entry.label}</span>}
-                <span className="text-medium">{range}</span>
+                <span className="font-mono text-xs text-silk">{range}</span>
             </div>
             {entry.notes && entry.notes.length > 0 && (
-                <div className="mt-1 italic">{entry.notes.join(', ')}</div>
+                <div className="mt-1 text-silk italic">{entry.notes.join(', ')}</div>
             )}
         </div>
     );

@@ -27,8 +27,16 @@ Server tests use `mongodb-memory-server`, so they need no running MongoDB (the f
 ## Gotchas
 
 - Use `127.0.0.1`, never `localhost`: Spotify rejects `localhost` redirect URIs, and `redirectUri` is `window.location.origin`.
-- Tailwind v4 utilities live in `@layer utilities`, so unlayered third-party CSS (react-colorful) beats them — use the `!` suffix (e.g. `h-4/5!`). Theme tokens (`bg-panel`, `text-accent`, `font-display`, `animate-playing`) are defined in `client/src/index.css` `@theme`.
+- Tailwind v4 utilities live in `@layer utilities`, so unlayered third-party CSS (react-colorful) beats them. Override it with a two-class selector in `index.css` (see `.bezel .react-colorful…`) or the `!` suffix.
 - Colors chosen at runtime must use inline `style`, not Tailwind classes.
+
+## Visual style ("Bench gear")
+
+- The site looks like a light-grey piece of hardware. The interface is **neutral only** (greys and near-black, no accent colors); the only real colors are album art and song colors.
+- Tokens are in `client/src/index.css` `@theme` (`bg-case`, `bg-panel`, `bg-display`, `text-ink`, `text-silk`, `text-danger`, `font-mono` = IBM Plex Mono, body = system Helvetica Neue). Hardware pieces are `@utility` classes there: `key` / `key-dark` / `key-down` (keys), `well` (recessed display, also inputs), `panel` + `screws`, `pad` (color swatch), `bezel` (the picker), `silk` (printed label text).
+- Shared pieces live in `client/src/components/ui/`: `buttons.ts` (key class strings), `SectionLabel` (label with a rule to the edge) and `Nameplate`.
+- `key*`, `well`, `panel`, `pad` and `bezel` set `box-shadow`, so don't add Tailwind `ring-*` to them (it also uses `box-shadow`); use `outline-*`. To change a key's text color, use the `!` suffix (`text-danger!`).
+- Layout: a top bar from `md` up, a bottom tab bar on phones (`Navbar`). From `lg` up, pages fill the height and scroll their own panels; below that the whole page scrolls. Use `dvh`, never `vh`.
 - The server env var is `CONNECTION_STRING` (not `MONGODB_URI`); `DB_NAME` defaults to `colordatabase`.
 - `PUT /api/songs/:id` keeps a song's `notes` when the body leaves them out (the Color Picker page never sends them), and `[]` clears them. It keeps `durationMs` the same way, but removes `albumImageUrl` when that's left out.
 - `PATCH /api/colors/:id` uses `null` to clear a field; the part's times are checked (`partError()`) after merging with the stored entry.

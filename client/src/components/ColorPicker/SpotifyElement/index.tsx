@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from './ColorSwatch/ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
-import { buttonClass } from './buttons';
+import { keyClass } from '../../ui/buttons';
+import SectionLabel from '../../ui/SectionLabel';
+import Nameplate from '../../ui/Nameplate';
+import { activeAt } from '../../../utils/timeline';
 import usePlaybackPosition from '../../../hooks/usePlaybackPosition';
 import Timeline from '../../Timeline';
 import { deleteColor, getColors, saveColor, updateColor } from '../../databaseAPI';
@@ -176,29 +179,55 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         }
     };
 
+    // Everything sounding right now: the whole-song colors plus the parts under the playhead
+    const activeIds = new Set(
+        positionMs === null ? [] : activeAt(colors, positionMs).map((entry) => entry.id),
+    );
+    const activeColors = colors.filter(
+        (entry) => entry.startMs === undefined || activeIds.has(entry.id),
+    );
+    // The status light shows the color of the part playing now, like a meter on the device
+    const lightColor =
+        colors.find((entry) => activeIds.has(entry.id))?.color ?? activeColors[0]?.color;
+
     return (
-        <div className="h-full w-full overflow-y-auto bg-panel p-[5%] text-white">
-            <div className="flex items-center justify-between">
-                <span>{username ? `Hi, ${username}` : 'Not connected to Spotify'}</span>
+        <div className="flex flex-col gap-6 p-5 sm:p-7 lg:p-9">
+            <div className="flex items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2.5">
+                    <span
+                        aria-hidden
+                        className={`size-2 shrink-0 rounded-full ${
+                            loggedIn ? 'bg-ink shadow-[0_0_0_2px_#8f8e89]' : 'ring-1 ring-silk'
+                        }`}
+                        style={loggedIn && lightColor ? { backgroundColor: lightColor } : undefined}
+                    />
+                    <span className="shrink-0 text-[11px] silk">
+                        {loggedIn ? 'Spotify connected' : 'Spotify not connected'}
+                    </span>
+                    {username && <span className="truncate text-sm text-silk">{username}</span>}
+                </span>
                 {loggedIn ? (
-                    <button onClick={handleLogout} className={buttonClass}>
-                        Logout
+                    <button onClick={handleLogout} className={keyClass}>
+                        Log out
                     </button>
                 ) : (
-                    <button onClick={login} className={buttonClass}>
-                        Login
+                    <button onClick={login} className={keyClass}>
+                        Connect Spotify
                     </button>
                 )}
             </div>
-            <SpotifyNowPlaying song={currentSong} />
+            <SpotifyNowPlaying song={currentSong} activeColors={activeColors} />
             {currentSong && (
-                <Timeline
-                    entries={colors}
-                    durationMs={currentSong.durationMs}
-                    positionMs={positionMs}
-                    selectedId={editingEntry?.id}
-                    onSelect={startEditing}
-                />
+                <section className="flex flex-col gap-3">
+                    <SectionLabel>Timeline</SectionLabel>
+                    <Timeline
+                        entries={colors}
+                        durationMs={currentSong.durationMs}
+                        positionMs={positionMs}
+                        selectedId={editingEntry?.id}
+                        onSelect={startEditing}
+                    />
+                </section>
             )}
             {editingEntry && (
                 <ColorEntryForm
@@ -227,19 +256,31 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     onSubmit={handleSave}
                 />
             </div>
-            <div className="flex w-full flex-wrap pt-[3%]">
+            <section className="flex flex-col gap-4">
+                <SectionLabel aside={colors.length > 0 ? colors.length : undefined}>
+                    Colors for this song
+                </SectionLabel>
                 {colors.length > 0 ? (
-                    colors.map((entry) => (
-                        <ColorSwatch
-                            entry={entry}
-                            key={entry.id}
-                            onDelete={() => handleDelete(entry.id)}
-                            onEdit={() => startEditing(entry)}
-                        />
-                    ))
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 2xl:grid-cols-4">
+                        {colors.map((entry) => (
+                            <ColorSwatch
+                                entry={entry}
+                                key={entry.id}
+                                onDelete={() => handleDelete(entry.id)}
+                                onEdit={() => startEditing(entry)}
+                            />
+                        ))}
+                    </div>
                 ) : (
-                    <div>No colors have been set for this song.</div>
+                    <p className="text-sm text-silk">
+                        {currentSong
+                            ? 'No colors yet for this song.'
+                            : 'Colors for the song you’re playing show up here.'}
+                    </p>
                 )}
+            </section>
+            <div className="mt-2">
+                <Nameplate details={['Model CV-1', 'Color studio']} />
             </div>
         </div>
     );
