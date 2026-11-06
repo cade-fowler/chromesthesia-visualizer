@@ -1,21 +1,18 @@
 import { useId, useState, type FormEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleCheck, faPenToSquare, faSquarePlus } from '@fortawesome/free-regular-svg-icons';
+import { faCircleCheck } from '@fortawesome/free-regular-svg-icons';
 import type { AddColorRequest, ColorEntry, HexColor } from '@chromesthesia/shared';
 import { emptyFields, readFields, type ColorEntryFields } from '../../../utils/colorEntryForm';
 import { formatMs, parseTime } from '../../../utils/time';
 import { textColorOn } from '../../../utils/color';
-import { buttonClass, smallButtonClass } from './buttons';
+import { keyClass, primaryKeyClass, smallKeyClass } from '../../ui/buttons';
+import SectionLabel from '../../ui/SectionLabel';
 
 const LABEL_SUGGESTIONS = ['intro', 'verse', 'pre-chorus', 'chorus', 'bridge', 'drop', 'outro'];
 
-const inputClass =
-    'w-full rounded-[5px] border-2 border-medium bg-transparent px-2 py-1 text-light ' +
-    'outline-none placeholder:text-medium focus:border-accent';
+const inputClass = 'well h-9 w-full min-w-0 px-2.5 font-mono text-sm placeholder:text-silk/70';
 
-/** The part and times of the entry being edited, shown beside "Editing" */
-const detailChipClass =
-    'rounded-[5px] border border-accent/60 bg-accent/15 px-2 py-0.5 text-sm text-light';
+const fieldLabelClass = 'silk text-[10px]';
 
 interface ColorEntryFormProps {
     /** The picker's color, which is what gets saved */
@@ -100,11 +97,12 @@ const ColorEntryForm = ({
     };
 
     const timeInput = (which: 'start' | 'end', name: string) => (
-        <label className="flex flex-1 flex-col gap-1">
-            <span className="text-sm text-medium">{name}</span>
-            <span className="flex gap-2">
+        <label className="flex min-w-0 flex-col gap-1.5">
+            <span className={fieldLabelClass}>{name}</span>
+            {/* The Mark key sits inside the field, so every field is the same size */}
+            <span className="flex h-9 items-center gap-1 well pr-1 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink">
                 <input
-                    className={inputClass}
+                    className="h-full min-w-0 flex-1 bg-transparent px-2.5 font-mono text-sm outline-none placeholder:text-silk/70"
                     value={fields[which]}
                     onChange={(e) => set({ [which]: e.target.value })}
                     placeholder={placeholders[which]}
@@ -113,7 +111,7 @@ const ColorEntryForm = ({
                 />
                 <button
                     type="button"
-                    className={smallButtonClass}
+                    className={smallKeyClass}
                     onClick={() => positionMs !== null && set({ [which]: formatMs(positionMs) })}
                     disabled={disabled || positionMs === null}
                     title={`Set ${name.toLowerCase()} to where playback is now`}
@@ -125,165 +123,161 @@ const ColorEntryForm = ({
     );
 
     const isWholeSong = !fields.start.trim() && !fields.end.trim();
+    const colorChanged = editing !== undefined && editing.color !== color;
 
     return (
         <form
             onSubmit={handleSubmit}
             aria-label={editing ? 'Edit a saved color' : 'Add a new color'}
-            className={`mt-[3%] flex flex-col gap-3 rounded-[15px] border-[3px] p-4 ${
-                editing ? 'border-accent bg-accent/10' : 'border-medium'
+            className={`grid gap-5 panel screws p-5 sm:grid-cols-[9.5rem_minmax(0,1fr)] ${
+                editing ? 'outline-2 outline-offset-2 outline-ink' : ''
             }`}
         >
-            <div className="flex items-center justify-between gap-2">
-                {editing ? (
-                    // One line, like the add form's header, so the form keeps its height. The
-                    // part and times sit in chips like the color chips on the right.
-                    <span className="flex min-w-0 items-center gap-2">
-                        <span className="flex shrink-0 items-center gap-2 text-lg font-bold text-accent">
-                            <FontAwesomeIcon icon={faPenToSquare} />
-                            Editing
+            {/* The color being saved. It's the form's header, so adding and editing keep the
+                same height; while editing, the saved color shows underneath if it changed. */}
+            <div
+                className="flex min-h-24 flex-col justify-end overflow-hidden pad"
+                style={{ backgroundColor: color, color: textColorOn(color) }}
+            >
+                <div className="flex flex-col gap-0.5 p-3">
+                    <span className="text-[10px] font-bold tracking-[0.12em] uppercase opacity-75">
+                        {editing ? 'Editing' : 'New color'}
+                    </span>
+                    <span className="font-mono text-lg leading-tight uppercase">{color}</span>
+                    {editing && (
+                        <span className="truncate text-xs">
+                            {[
+                                editing.label,
+                                editing.startMs === undefined
+                                    ? 'Whole song'
+                                    : `${formatMs(editing.startMs)}–${formatMs(editing.endMs!)}`,
+                            ]
+                                .filter(Boolean)
+                                .join(' · ')}
                         </span>
-                        {editing.label && (
-                            <span className={`${detailChipClass} min-w-0 truncate`}>
-                                {editing.label}
+                    )}
+                </div>
+                {colorChanged && (
+                    <span
+                        className="px-3 py-1 font-mono text-[11px] uppercase"
+                        style={{
+                            backgroundColor: editing.color,
+                            color: textColorOn(editing.color),
+                        }}
+                    >
+                        <span className="sr-only">Changing from </span>was {editing.color}
+                    </span>
+                )}
+            </div>
+            <div className="flex min-w-0 flex-col gap-4">
+                <SectionLabel
+                    aside={
+                        <button
+                            type="button"
+                            className={smallKeyClass}
+                            onClick={() => set({ start: '', end: '' })}
+                            disabled={disabled || isWholeSong}
+                            title="Apply the color to the whole song"
+                        >
+                            Whole song
+                        </button>
+                    }
+                >
+                    Times
+                </SectionLabel>
+                <div className="grid grid-cols-2 gap-3">
+                    {timeInput('start', 'Start')}
+                    {timeInput('end', 'End')}
+                    <label className="flex min-w-0 flex-col gap-1.5">
+                        <span className={fieldLabelClass}>Part</span>
+                        <input
+                            className={inputClass}
+                            value={fields.label}
+                            onChange={(e) => set({ label: e.target.value })}
+                            placeholder={isWholeSong ? 'optional' : 'chorus'}
+                            list={`${id}-labels`}
+                            maxLength={50}
+                            disabled={disabled}
+                        />
+                        <datalist id={`${id}-labels`}>
+                            {LABEL_SUGGESTIONS.map((suggestion) => (
+                                <option key={suggestion} value={suggestion} />
+                            ))}
+                        </datalist>
+                    </label>
+                    <label className="flex min-w-0 flex-col gap-1.5">
+                        <span className={fieldLabelClass}>Notes</span>
+                        <input
+                            className={inputClass}
+                            value={fields.notes}
+                            onChange={(e) => set({ notes: e.target.value })}
+                            placeholder="glossy, warm"
+                            disabled={disabled}
+                        />
+                    </label>
+                </div>
+                {pastEnd && (
+                    <span className="text-sm text-silk">
+                        That&apos;s past the end of the song ({formatMs(durationMs!)}).
+                    </span>
+                )}
+                {error && (
+                    <span className="text-sm font-bold text-danger" role="alert">
+                        {error}
+                    </span>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        type="submit"
+                        className={primaryKeyClass}
+                        disabled={disabled || busy !== null}
+                    >
+                        {busy === 'saving' ? 'Saving…' : editing ? 'Save changes' : 'Add color'}
+                    </button>
+                    {/* Always rendered so screen readers announce the text when it appears */}
+                    <span role="status" className="text-[11px] silk">
+                        {status && (
+                            <span className="flex items-center gap-1.5">
+                                <FontAwesomeIcon icon={faCircleCheck} />
+                                {status}
                             </span>
                         )}
-                        <span className={`${detailChipClass} shrink-0`}>
-                            {editing.startMs === undefined
-                                ? 'Whole song'
-                                : `${formatMs(editing.startMs)}–${formatMs(editing.endMs!)}`}
-                        </span>
                     </span>
-                ) : (
-                    <span className="flex items-center gap-2 text-lg font-bold text-light">
-                        <FontAwesomeIcon icon={faSquarePlus} />
-                        Add a new color
-                    </span>
-                )}
-                <span className="flex shrink-0 items-center gap-1.5 text-sm">
-                    {editing && editing.color !== color && (
-                        <>
-                            <span
-                                className="rounded-[5px] px-2 py-0.5 line-through"
-                                style={{
-                                    backgroundColor: editing.color,
-                                    color: textColorOn(editing.color),
-                                }}
-                            >
-                                {editing.color}
-                            </span>
-                            <span aria-label="becomes">→</span>
-                        </>
-                    )}
-                    <span
-                        className="rounded-[5px] px-2 py-0.5"
-                        style={{ backgroundColor: color, color: textColorOn(color) }}
-                    >
-                        {color}
-                    </span>
-                </span>
-            </div>
-            <div className="flex flex-wrap items-end gap-3">
-                {timeInput('start', 'Start')}
-                {timeInput('end', 'End')}
-                <button
-                    type="button"
-                    className={smallButtonClass}
-                    onClick={() => set({ start: '', end: '' })}
-                    disabled={disabled || isWholeSong}
-                    title="Apply the color to the whole song"
-                >
-                    Whole song
-                </button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-                <label className="flex min-w-40 flex-1 flex-col gap-1">
-                    <span className="text-sm text-medium">Part</span>
-                    <input
-                        className={inputClass}
-                        value={fields.label}
-                        onChange={(e) => set({ label: e.target.value })}
-                        placeholder={isWholeSong ? 'optional' : 'chorus'}
-                        list={`${id}-labels`}
-                        maxLength={50}
-                        disabled={disabled}
-                    />
-                    <datalist id={`${id}-labels`}>
-                        {LABEL_SUGGESTIONS.map((suggestion) => (
-                            <option key={suggestion} value={suggestion} />
-                        ))}
-                    </datalist>
-                </label>
-                <label className="flex min-w-40 flex-1 flex-col gap-1">
-                    <span className="text-sm text-medium">Notes</span>
-                    <input
-                        className={inputClass}
-                        value={fields.notes}
-                        onChange={(e) => set({ notes: e.target.value })}
-                        placeholder="glossy, warm"
-                        disabled={disabled}
-                    />
-                </label>
-            </div>
-            {pastEnd && (
-                <span className="text-sm text-complement">
-                    That&apos;s past the end of the song ({formatMs(durationMs!)}).
-                </span>
-            )}
-            {error && (
-                <span className="text-sm text-red-400" role="alert">
-                    {error}
-                </span>
-            )}
-            <div className="-m-2 flex flex-wrap items-center">
-                <button
-                    type="submit"
-                    className={`${buttonClass} ${
-                        editing ? 'border-accent! bg-accent text-dark! hover:bg-accent/80' : ''
-                    }`}
-                    disabled={disabled || busy !== null}
-                >
-                    {busy === 'saving' ? 'Saving…' : editing ? 'Save changes' : 'Add color'}
-                </button>
-                {/* Always rendered so screen readers announce the text when it appears */}
-                <span role="status" className="mx-2 text-sm text-spotify">
-                    {status && (
-                        <span className="flex items-center gap-1.5">
-                            <FontAwesomeIcon icon={faCircleCheck} />
-                            {status}
+                    {(onCancel || onDelete) && (
+                        <span className="ml-auto flex gap-3">
+                            {onCancel && (
+                                <button
+                                    type="button"
+                                    className={keyClass}
+                                    onClick={onCancel}
+                                    disabled={busy !== null}
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                            {onDelete &&
+                                (confirmingDelete ? (
+                                    <button
+                                        type="button"
+                                        className={`${keyClass} text-danger!`}
+                                        onClick={handleDelete}
+                                        disabled={busy !== null}
+                                    >
+                                        {busy === 'deleting' ? 'Deleting…' : 'Really delete?'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className={keyClass}
+                                        onClick={() => setConfirmingDelete(true)}
+                                        disabled={busy !== null}
+                                    >
+                                        Delete
+                                    </button>
+                                ))}
                         </span>
                     )}
-                </span>
-                {onCancel && (
-                    <button
-                        type="button"
-                        className={buttonClass}
-                        onClick={onCancel}
-                        disabled={busy !== null}
-                    >
-                        Cancel
-                    </button>
-                )}
-                {onDelete &&
-                    (confirmingDelete ? (
-                        <button
-                            type="button"
-                            className={`${buttonClass} ml-auto border-red-600! text-red-500! hover:bg-red-600! hover:text-light!`}
-                            onClick={handleDelete}
-                            disabled={busy !== null}
-                        >
-                            {busy === 'deleting' ? 'Deleting…' : 'Really delete?'}
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className={`${buttonClass} ml-auto`}
-                            onClick={() => setConfirmingDelete(true)}
-                            disabled={busy !== null}
-                        >
-                            Delete
-                        </button>
-                    ))}
+                </div>
             </div>
         </form>
     );

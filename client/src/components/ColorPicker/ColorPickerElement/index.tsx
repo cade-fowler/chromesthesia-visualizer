@@ -1,37 +1,30 @@
 import { HexColorPicker, HexColorInput } from 'react-colorful';
 import type { HexColor } from '@chromesthesia/shared';
-import { textColorOn } from '../../../utils/color';
 
 interface ColorPickerElementProps {
     color: HexColor;
     onColorChange: (color: HexColor) => void;
 }
 
-const ColorPickerElement = ({ color, onColorChange }: ColorPickerElementProps) => {
-    // The background follows the picked color, so it has to be an inline style
-    const style = {
-        backgroundColor: color,
-        color: textColorOn(color),
-    };
-
-    return (
-        // Centers the picker + hex input as a group, both ways
+/** The picker in its bezel. The bezel's background is the picked color, so it's set inline. */
+const ColorPickerElement = ({ color, onColorChange }: ColorPickerElementProps) => (
+    <div className="flex h-full flex-col bg-case-dark p-5 lg:border-l lg:border-edge lg:p-9">
         <div
-            style={style}
-            className="flex h-full w-full flex-col items-center justify-center gap-2"
+            className="flex min-h-0 flex-1 flex-col gap-3 bezel p-3 lg:gap-4 lg:p-5"
+            style={{ backgroundColor: color }}
         >
-            {/* react-colorful injects unlayered CSS (200px x 200px), which beats Tailwind's
-                layered utilities regardless of specificity, so the size needs `!` (important) */}
-            <HexColorPicker color={color} onChange={onColorChange} className="h-4/5! w-[90%]!" />
+            <div className="min-h-0 flex-1">
+                <HexColorPicker color={color} onChange={onColorChange} />
+            </div>
             <HexColorInput
                 color={color}
                 onChange={onColorChange}
-                style={style}
                 prefixed
-                className="w-[90%] border-none text-center text-base outline-none"
+                aria-label="Hex color"
+                className="mx-auto h-9 w-36 shrink-0 well text-center font-mono text-lg tracking-[0.06em] uppercase"
             />
         </div>
-    );
-};
+    </div>
+);
 
 export default ColorPickerElement;

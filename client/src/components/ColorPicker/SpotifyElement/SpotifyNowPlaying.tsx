@@ -1,50 +1,82 @@
 import { faSpotify } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import type { NowPlaying } from '@chromesthesia/shared';
+import type { ColorEntry, NowPlaying } from '@chromesthesia/shared';
 import PlayingAnimation from './PlayingAnimation';
+import { textColorOn } from '../../../utils/color';
+import { formatMs } from '../../../utils/time';
 
 interface SpotifyNowPlayingProps {
     song: NowPlaying | null;
+    /** The colors sounding right now: whole-song colors and the parts under the playhead */
+    activeColors: ColorEntry[];
 }
 
-const SpotifyNowPlaying = ({ song }: SpotifyNowPlayingProps) => {
+const describe = (entry: ColorEntry) =>
+    entry.startMs === undefined
+        ? `${entry.label ?? 'Whole song'} · ${entry.color}`
+        : `${entry.label ?? 'Part'} · ${formatMs(entry.startMs)}–${formatMs(entry.endMs!)} · ${entry.color}`;
+
+/** The now-playing display: album art, song, and a bar of every color active right now. */
+const SpotifyNowPlaying = ({ song, activeColors }: SpotifyNowPlayingProps) => {
     const isPlaying = song?.isPlaying ?? false;
 
     return (
-        <div className="mx-[5%] max-w-[90%] font-body">
-            <div className="flex items-center">
-                <div className="p-[2%] text-[4rem]">
-                    <FontAwesomeIcon icon={faSpotify} className="text-spotify" />
-                </div>
-                <p className="w-full py-[5%] pr-[5%] text-[2.5rem] font-bold text-light">
-                    {isPlaying ? 'Now playing' : 'Currently offline'}
-                </p>
-            </div>
-            {song && (
-                <div className="flex rounded-[15px] border-[3px] border-medium">
-                    {song.albumImageUrl && (
-                        <img
-                            className="box-content h-auto w-1/4 shrink-0 rounded-[18%] p-[5%]"
-                            alt={`${song.title} album art`}
-                            src={song.albumImageUrl}
-                        />
-                    )}
-                    <div className="flex w-full flex-col justify-evenly py-[8%]">
-                        <div className="flex pr-[5%] text-[2rem]">
-                            <PlayingAnimation isPlaying={isPlaying} />
-                            <a
-                                className="grow font-bold text-light no-underline"
-                                href={song.songUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {song.title}
-                            </a>
-                        </div>
-                        <p className="text-[1.5rem] text-medium">{song.artist}</p>
-                    </div>
+        <div className="flex items-center gap-4 well rounded-md p-4 sm:gap-5">
+            {song?.albumImageUrl ? (
+                <img
+                    className="size-18 shrink-0 rounded-[2px] object-cover sm:size-22"
+                    alt={`${song.title} album art`}
+                    src={song.albumImageUrl}
+                />
+            ) : (
+                <div className="grid size-18 shrink-0 place-items-center rounded-[2px] bg-ink/10 text-2xl text-silk sm:size-22">
+                    <FontAwesomeIcon icon={faSpotify} />
                 </div>
             )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] text-silk uppercase">
+                    <PlayingAnimation isPlaying={isPlaying} />
+                    {isPlaying ? 'Now playing' : song ? 'Paused' : 'Nothing playing'}
+                </span>
+                {song ? (
+                    <>
+                        <a
+                            className="line-clamp-2 text-xl leading-tight font-bold tracking-[-0.02em] hover:underline sm:text-2xl"
+                            href={song.songUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {song.title}
+                        </a>
+                        <span className="truncate text-sm text-silk">{song.artist}</span>
+                    </>
+                ) : (
+                    <span className="text-sm text-silk">
+                        Play a song on Spotify to start adding colors.
+                    </span>
+                )}
+                {activeColors.length > 0 && (
+                    <div
+                        className="mt-2 flex gap-[3px]"
+                        role="group"
+                        aria-label="Colors playing now"
+                    >
+                        {activeColors.map((entry) => (
+                            <span
+                                key={entry.id}
+                                title={describe(entry)}
+                                className="h-6 min-w-0 flex-1 truncate rounded-[3px] px-2 text-[10px] leading-6 font-bold tracking-[0.06em] uppercase shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]"
+                                style={{
+                                    backgroundColor: entry.color,
+                                    color: textColorOn(entry.color),
+                                }}
+                            >
+                                {entry.label}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

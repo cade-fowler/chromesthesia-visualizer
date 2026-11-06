@@ -6,6 +6,7 @@ import { activeAt, layoutTimeline, timelineLength } from '../../utils/timeline';
 import TimelineTooltip from './TimelineTooltip';
 
 const LANE_REM = 2.25;
+const GRID_MS = 15_000;
 // Each whole-song band gets at least this much height; more bands make the timeline taller.
 // Set to 0 to go back to squeezing the bands into the height the parts need.
 const MIN_BAND_REM = 1.25;
@@ -54,12 +55,16 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
     };
     const partsHeight = Math.max(lanes.length, 1) * LANE_REM + 0.75;
     const height = Math.max(partsHeight, wholeSong.length * MIN_BAND_REM);
+    // A faint grid line every 15 seconds, like the bar lines on a track lane. It's a darkening
+    // overlay, so it shows on the whole-song colors as well as the bare grey.
+    const step = (GRID_MS / length) * 100;
+    const gridLines = `repeating-linear-gradient(to right, transparent 0 calc(${step}% - 1px), rgba(0,0,0,0.1) calc(${step}% - 1px) ${step}%)`;
 
     return (
-        <div className="relative mt-[3%]">
+        <div className="relative">
             {hovered && entries.includes(hovered.entry) && <TimelineTooltip {...hovered} />}
             <div
-                className="relative overflow-hidden rounded-[10px] border-2 border-medium bg-white/5"
+                className="relative overflow-hidden rounded-[4px] bg-[#c9c8c3] shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]"
                 style={{ height: `${height}rem` }}
             >
                 {/* Backdrop: one horizontal band per whole-song color */}
@@ -69,10 +74,10 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                             key={entry.id}
                             type="button"
                             aria-label={`Whole-song color ${describe(entry)}`}
-                            className={`flex-1 transition-opacity hover:opacity-80 ${clickable} ${
+                            className={`flex-1 transition-[filter] hover:brightness-110 ${clickable} ${
                                 entry.id === selectedId
-                                    ? 'opacity-90 outline-2 -outline-offset-4 outline-light outline-dashed'
-                                    : 'opacity-60'
+                                    ? 'outline-2 -outline-offset-4 outline-ink outline-dashed'
+                                    : ''
                             }`}
                             style={{ backgroundColor: entry.color }}
                             {...hoverProps(entry, 50)}
@@ -81,17 +86,22 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                         />
                     ))}
                 </div>
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{ backgroundImage: gridLines }}
+                />
                 {lanes.map((lane, row) =>
                     lane.map((part) => (
                         <button
                             key={part.id}
                             type="button"
                             aria-label={describe(part)}
-                            className={`absolute overflow-hidden rounded-[6px] px-1.5 text-left text-xs leading-none text-ellipsis whitespace-nowrap shadow-md ring-black/40 transition-[box-shadow,transform] ${clickable} ${
+                            className={`absolute overflow-hidden rounded-[3px] px-1.5 text-left text-[10px] leading-none font-bold tracking-[0.05em] text-ellipsis whitespace-nowrap uppercase transition-[box-shadow] ${clickable} ${
                                 active.has(part.id)
-                                    ? 'z-10 scale-y-110 ring-3 ring-light!'
-                                    : 'ring-1'
-                            }`}
+                                    ? 'z-10 shadow-[inset_0_0_0_2px_var(--color-ink)]'
+                                    : 'shadow-[inset_0_-3px_0_rgba(0,0,0,0.12),0_1px_0_rgba(0,0,0,0.3)]'
+                            } ${part.id === selectedId ? 'outline-2 -outline-offset-4 outline-ink outline-dashed' : ''}`}
                             style={{
                                 left: percent(part.startMs),
                                 width: `calc(${percent(part.endMs - part.startMs)} - 2px)`,
@@ -111,14 +121,14 @@ const Timeline = ({ entries, durationMs, positionMs, onSelect, selectedId }: Tim
                 {showPlayhead && (
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-y-0 z-20 w-0.5 -translate-x-1/2 bg-light shadow-[0_0_4px_rgba(0,0,0,0.8)]"
+                        className="pointer-events-none absolute inset-y-0 z-20 w-0.5 -translate-x-1/2 bg-ink"
                         style={{ left: percent(positionMs) }}
                     />
                 )}
             </div>
-            <div className="mt-1 flex justify-between text-xs text-medium">
+            <div className="mt-1.5 flex justify-between font-mono text-xs text-silk">
                 <span>0:00</span>
-                {showPlayhead && <span className="text-light">{formatMs(positionMs)}</span>}
+                {showPlayhead && <span className="text-ink">{formatMs(positionMs)}</span>}
                 <span>{formatMs(length)}</span>
             </div>
         </div>

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import type { ColorEntry } from '@chromesthesia/shared';
-import { isDark, textColorOn } from '../../../../utils/color';
 import { formatMs } from '../../../../utils/time';
+import { iconKeyClass, smallKeyClass } from '../../../ui/buttons';
 
 interface ColorSwatchProps {
     entry: ColorEntry;
@@ -13,16 +13,15 @@ interface ColorSwatchProps {
     onEdit: () => void;
 }
 
+/**
+ * A color pad with its details printed underneath. The edit and delete keys appear on hover
+ * (and keyboard focus); on touch screens, which can't hover, they always show.
+ */
 const ColorSwatch = ({ entry, onDelete, onEdit }: ColorSwatchProps) => {
     const { color, label, notes, startMs, endMs } = entry;
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [failed, setFailed] = useState(false);
-    const textColor = textColorOn(color);
-    const outlined = { color: textColor, borderColor: textColor };
-    const iconButtonClass = `rounded-[30%] px-1.5 py-1 text-base ${
-        isDark(color) ? 'hover:bg-white/20' : 'hover:bg-black/20'
-    }`;
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -41,70 +40,64 @@ const ColorSwatch = ({ entry, onDelete, onEdit }: ColorSwatchProps) => {
         setFailed(false);
     };
 
+    const range =
+        startMs !== undefined && endMs !== undefined
+            ? `${formatMs(startMs)}–${formatMs(endMs)}`
+            : null;
+
     return (
-        <div
-            className="group relative max-h-[30%] min-h-40 min-w-1/5 grow transition-transform duration-300 hover:scale-110"
-            style={{ background: color }}
-        >
-            <div
-                className={`flex h-full flex-col items-center justify-center overflow-hidden transition-opacity duration-300 group-hover:opacity-100 ${
-                    confirmingDelete ? 'opacity-100' : 'opacity-0'
-                }`}
-                style={{ color: textColor }}
-            >
-                <div className="absolute top-2 right-2 flex flex-col items-end gap-0.5">
+        <div className="group flex min-w-0 flex-col gap-2">
+            <div className="relative h-20 pad" style={{ backgroundColor: color }}>
+                <div
+                    className={`absolute top-2 right-2 flex gap-1.5 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100 ${
+                        confirmingDelete ? 'opacity-100' : 'opacity-0'
+                    }`}
+                >
                     {confirmingDelete ? (
                         <>
                             <button
-                                className="rounded-[5px] border border-red-600 bg-red-600/20 px-2 text-red-600 disabled:opacity-60"
+                                className={`${smallKeyClass} text-danger!`}
                                 onClick={handleDelete}
                                 disabled={deleting}
                             >
                                 {deleting ? 'Deleting…' : failed ? 'Retry' : 'Delete'}
                             </button>
-                            <button
-                                className="rounded-[5px] border px-2 disabled:opacity-60"
-                                style={outlined}
-                                onClick={cancel}
-                                disabled={deleting}
-                            >
+                            <button className={smallKeyClass} onClick={cancel} disabled={deleting}>
                                 Cancel
                             </button>
                         </>
                     ) : (
-                        <div className="flex gap-0.5">
+                        <>
                             <button
                                 aria-label={`Edit ${color}`}
-                                className={iconButtonClass}
+                                title="Edit"
+                                className={iconKeyClass}
                                 onClick={onEdit}
                             >
-                                <FontAwesomeIcon
-                                    icon={faPenToSquare}
-                                    style={{ color: textColor }}
-                                />
+                                <FontAwesomeIcon icon={faPenToSquare} />
                             </button>
                             <button
                                 aria-label={`Delete ${color}`}
-                                className={iconButtonClass}
+                                title="Delete"
+                                className={iconKeyClass}
                                 onClick={() => setConfirmingDelete(true)}
                             >
-                                <FontAwesomeIcon icon={faTrashCan} style={{ color: textColor }} />
+                                <FontAwesomeIcon icon={faTrashCan} />
                             </button>
-                        </div>
+                        </>
                     )}
                 </div>
-                <span>{color}</span>
-                {label && <span className="text-sm">{label}</span>}
-                {startMs !== undefined && endMs !== undefined && (
-                    <span className="text-sm">
-                        {formatMs(startMs)}–{formatMs(endMs)}
-                    </span>
-                )}
+            </div>
+            <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-mono text-xs uppercase">{color}</span>
+                <span className="truncate text-[10px] silk">
+                    {[label ?? (range ? 'Part' : 'Whole song'), range].filter(Boolean).join(' · ')}
+                </span>
                 {notes && notes.length > 0 && (
-                    <span className="px-2 text-center text-sm italic">{notes.join(', ')}</span>
+                    <span className="text-xs text-silk italic">{notes.join(', ')}</span>
                 )}
                 {failed && (
-                    <span className="text-sm" role="alert">
+                    <span className="text-xs font-bold text-danger" role="alert">
                         Couldn&apos;t delete. Try again.
                     </span>
                 )}
