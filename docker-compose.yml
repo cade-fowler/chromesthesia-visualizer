@@ -1,0 +1,38 @@
+# Production: the app and MongoDB. Settings come from .env next to this file (see .env.example).
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_SPOTIFY_CLIENT_ID: ${VITE_SPOTIFY_CLIENT_ID:?Set VITE_SPOTIFY_CLIENT_ID in .env}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      CONNECTION_STRING: mongodb://mongo:27017
+      DB_NAME: ${DB_NAME:-colordatabase}
+      PORT: 5050
+      OWNER_PASSWORD_HASH: ${OWNER_PASSWORD_HASH:?Set OWNER_PASSWORD_HASH in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      # Only safe because the port below is reachable from this machine alone (the tunnel)
+      TRUST_CLOUDFLARE: 'true'
+    # Loopback only: cloudflared on this host reaches it; nothing else can
+    ports:
+      - '127.0.0.1:${PORT:-5050}:5050'
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    # No ports: only the app reaches it, over the compose network
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

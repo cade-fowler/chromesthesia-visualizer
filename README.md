@@ -97,7 +97,7 @@ history and notes, can be deleted by id, and can be queried across all songs for
 Colors come back in **song order**: whole-song colors first, then parts by `startMs`, with ties
 going to whichever was saved first. That's the order a timeline of the song would draw them in.
 
-There's no authentication yet, so don't expose the server publicly.
+Reads are public. Writes need the owner's session cookie, from logging in at `/login`.
 
 1. The client logs in to Spotify with the Authorization Code + PKCE flow, so no client secret is
    needed in the browser.
@@ -120,6 +120,35 @@ npm run migrate:split-colors -w server
 
 It also converts the oldest, raw-Spotify-shaped song documents and merges duplicate documents for
 the same song. Songs it can't convert are reported and left untouched. It's safe to rerun.
+
+## Deploying
+
+In production the Express server also serves the built client, so the whole site is one origin
+(`npm run build && npm start` with `NODE_ENV=production`). `docker-compose.yml` runs it with
+MongoDB, for a home server behind a Cloudflare Tunnel:
+
+```sh
+cp .env.example .env               # Spotify client id, owner password hash, session secret
+docker compose up -d --build
+```
+
+- The app listens on `127.0.0.1:5050` only, so the tunnel (`cloudflared` on the same host) is the
+  one way in. That's what makes `TRUST_CLOUDFLARE=true` safe. If `cloudflared` runs in Docker
+  instead, put it on this compose network and point it at `http://app:5050`.
+- MongoDB has no published port; its data is in the `mongo-data` volume.
+- In the Spotify dashboard, add the site's origin (e.g. `https://colors.example.com`) as a
+  redirect URI.
+- `VITE_SPOTIFY_CLIENT_ID` is built into the client, so changing it needs `--build`.
+
+To copy an existing database in (needs the
+[MongoDB Database Tools](https://www.mongodb.com/docs/database-tools/) where the old one runs):
+
+```sh
+mongodump --db colordatabase --archive=colordatabase.archive
+# on the server, with the stack running:
+docker compose exec -T mongo mongorestore --archive < colordatabase.archive
+docker compose restart app         # recreates the indexes on startup
+```
 
 ## License
 
