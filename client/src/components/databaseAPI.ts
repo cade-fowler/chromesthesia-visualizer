@@ -3,6 +3,7 @@ import type {
     AlbumWithSongs,
     AuthStatus,
     ColorEntry,
+    HueChartColor,
     LibraryStats,
     ListSongsQuery,
     LoginRequest,
@@ -67,6 +68,13 @@ export const getRandomSong = async (not?: string): Promise<SongWithColors | null
 export const getStats = async (): Promise<LibraryStats> => {
     const response = await fetch('/api/stats');
     if (!response.ok) throw await errorFrom(response, 'Loading stats');
+    return response.json();
+};
+
+/** Every color entry with its song and OKLCH hue and lightness, for the home page's hue chart. */
+export const getHueChart = async (): Promise<HueChartColor[]> => {
+    const response = await fetch('/api/stats/hues');
+    if (!response.ok) throw await errorFrom(response, 'Loading colors');
     return response.json();
 };
 

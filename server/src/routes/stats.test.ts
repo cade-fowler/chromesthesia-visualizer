@@ -52,3 +52,38 @@ describe('GET /api/stats', () => {
         });
     });
 });
+
+describe('GET /api/stats/hues', () => {
+    it('is empty when nothing is logged', async () => {
+        const res = await request(app).get('/api/stats/hues');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([]);
+    });
+
+    it('lists every color entry with its song, hue and lightness, without logging in', async () => {
+        await putSong('a', { title: 'Song A', artists: ['One', 'Two'] });
+        await putSong('b', { title: 'Song B' });
+        const red = await owner.post('/api/songs/a/colors').send({ color: '#ff0000' });
+        await owner.post('/api/songs/a/colors').send({ color: '#ff0000', startMs: 0, endMs: 10 });
+        const grey = await owner.post('/api/songs/b/colors').send({ color: '#808080' });
+
+        const res = await request(app).get('/api/stats/hues');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(3);
+        expect(res.body[0]).toEqual({
+            id: red.body.id,
+            color: '#ff0000',
+            songId: 'a',
+            title: 'Song A',
+            artists: ['One', 'Two'],
+            hue: expect.closeTo(29.2, 0),
+            lightness: expect.closeTo(0.628, 2),
+        });
+        // A duplicate hex is its own entry
+        expect(res.body[1]).toMatchObject({ color: '#ff0000', songId: 'a' });
+        expect(res.body[2]).toMatchObject({ id: grey.body.id, title: 'Song B', hue: null });
+        expect(res.body[2].lightness).toBeCloseTo(0.6, 1);
+    });
+});
