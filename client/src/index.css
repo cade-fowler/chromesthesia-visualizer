@@ -187,6 +187,11 @@
         font: inherit;
     }
 
+    /* Chrome draws the search box's clear button in blue; the interface stays neutral */
+    input[type='search']::-webkit-search-cancel-button {
+        filter: grayscale(1);
+    }
+
     :focus-visible {
         outline: 2px solid var(--color-ink);
         outline-offset: 2px;

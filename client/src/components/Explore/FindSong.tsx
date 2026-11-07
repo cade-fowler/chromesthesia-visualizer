@@ -4,7 +4,9 @@ import { listSongs } from '../databaseAPI';
 import SectionLabel from '../ui/SectionLabel';
 import { inputClass } from '../ui/fields';
 import { smallKeyClass } from '../ui/buttons';
-import SongCard from './SongCard';
+import SongCard from '../ui/SongCard';
+import { albumMatches } from '../../utils/albumMatches';
+import AlbumResult from './AlbumResult';
 
 const DEBOUNCE_MS = 250;
 
@@ -27,7 +29,8 @@ const FindSong = ({ decades }: FindSongProps) => {
     const [text, setText] = useState('');
     const [q, setQ] = useState('');
     const [decade, setDecade] = useState<number | undefined>(undefined);
-    const [results, setResults] = useState<SongSummary[] | null>(null);
+    // Kept with the search they answer, so albums are matched against the right text
+    const [found, setFound] = useState<{ q: string; songs: SongSummary[] } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     // Search once typing pauses
@@ -43,7 +46,7 @@ const FindSong = ({ decades }: FindSongProps) => {
         const controller = new AbortController();
         listSongs({ q, decade, limit: 200 }, controller.signal)
             .then((songs) => {
-                setResults(songs);
+                setFound({ q, songs });
                 setError(null);
             })
             .catch((err: Error) => {
@@ -51,6 +54,9 @@ const FindSong = ({ decades }: FindSongProps) => {
             });
         return () => controller.abort();
     }, [filtering, q, decade]);
+
+    const results = found?.songs ?? null;
+    const albums = found ? albumMatches(found.songs, found.q) : [];
 
     return (
         <section className="flex flex-col gap-4">
@@ -91,13 +97,27 @@ const FindSong = ({ decades }: FindSongProps) => {
             ) : results.length === 0 ? (
                 <p className="text-sm text-silk">No songs match.</p>
             ) : (
-                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {results.map((song) => (
-                        <li key={song.id} className="min-w-0">
-                            <SongCard song={song} />
-                        </li>
-                    ))}
-                </ul>
+                <>
+                    {albums.length > 0 && (
+                        <ul aria-label="Albums" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                            {albums.map((match) => (
+                                <li key={match.album.id} className="min-w-0">
+                                    <AlbumResult match={match} />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <ul
+                        aria-label="Songs"
+                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                    >
+                        {results.map((song) => (
+                            <li key={song.id} className="min-w-0">
+                                <SongCard song={song} />
+                            </li>
+                        ))}
+                    </ul>
+                </>
             )}
         </section>
     );

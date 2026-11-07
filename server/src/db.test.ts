@@ -24,7 +24,7 @@ it('creates the indexes on an empty database, and is safe to run again', async (
     await ensureIndexes(db);
     await ensureIndexes(db);
 
-    expect(await indexNames(db, 'songs')).toEqual(['_id_', 'id_1']);
+    expect(await indexNames(db, 'songs')).toEqual(['_id_', 'album.id_1', 'id_1']);
     expect(await indexNames(db, 'colors')).toEqual([
         '_id_',
         'color_1',

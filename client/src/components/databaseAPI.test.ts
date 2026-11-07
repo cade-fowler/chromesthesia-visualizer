@@ -3,6 +3,7 @@ import type { NowPlaying } from '@chromesthesia/shared';
 import {
     addColor,
     deleteColor,
+    getAlbum,
     getRandomSong,
     getSong,
     getStats,
@@ -199,6 +200,26 @@ describe('getRandomSong', () => {
     });
 });
 
+describe('getAlbum', () => {
+    it('returns the album', async () => {
+        const body = { album: { id: 'a b' }, artists: [], songs: [] };
+        fetchMock.mockResolvedValueOnce(respond(200, body));
+
+        await expect(getAlbum('a b')).resolves.toEqual(body);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/albums/a%20b');
+    });
+
+    it('resolves null for an unknown album', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Album not found' }));
+        await expect(getAlbum('x')).resolves.toBeNull();
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(500));
+        await expect(getAlbum('x')).rejects.toThrow('Loading album failed (500)');
+    });
+});
+
 describe('getStats', () => {
     it('returns the counts', async () => {
         const stats = { songs: 1, colors: 2, artists: 1, parts: 1, decades: [1990] };
@@ -262,6 +283,8 @@ describe('saveSongNotes', () => {
         songUrl: 'https://open.spotify.com/track/1',
         albumImageUrl: 'https://i.scdn.co/image/1',
         durationMs: 252000,
+        trackNumber: 1,
+        discNumber: 1,
         notes: ['dusty'],
     };
 

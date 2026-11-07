@@ -72,6 +72,17 @@ describe('PUT /api/songs/:id', () => {
 
     const artistUrls = ['https://open.spotify.com/artist/a', 'https://open.spotify.com/artist/b'];
 
+    it('stores track and disc numbers and keeps them when a save leaves them out', async () => {
+        await putSong({ ...song, trackNumber: 3, discNumber: 2 });
+        const res = await putSong();
+
+        expect(res.body).toMatchObject({ trackNumber: 3, discNumber: 2 });
+    });
+
+    it.each([0, -1, 1.5, '3'])('rejects a track number of %j', async (trackNumber) => {
+        expect((await putSong({ ...song, trackNumber })).status).toBe(400);
+    });
+
     it('stores the album and artist links and keeps them when a save leaves them out', async () => {
         await putSong({ ...song, album, artistUrls });
         const res = await putSong();

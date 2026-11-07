@@ -25,6 +25,9 @@ interface SpotifyPlayback {
         id: string;
         name: string;
         duration_ms: number;
+        /** 0 for local files */
+        track_number: number;
+        disc_number: number;
         type: 'track' | 'episode';
         album: {
             /** null for local files */
@@ -158,8 +161,16 @@ export const getUsername = async (): Promise<string> => {
 
 type SpotifyTrack = NonNullable<SpotifyPlayback['item']>;
 
-/** The album and artist links of a track. Local files have neither, so they're left out. */
-export const songDetails = ({ album, artists }: SpotifyTrack): SongDetails => {
+/**
+ * The album, artist links and place on the album of a track. Local files have none of them, so
+ * they're left out.
+ */
+export const songDetails = ({
+    album,
+    artists,
+    track_number,
+    disc_number,
+}: SpotifyTrack): SongDetails => {
     const artistUrls = artists.map((artist) => artist.external_urls.spotify);
     return {
         ...(album.id &&
@@ -174,6 +185,8 @@ export const songDetails = ({ album, artists }: SpotifyTrack): SongDetails => {
                 },
             }),
         ...(artistUrls.every(Boolean) && { artistUrls: artistUrls as string[] }),
+        ...(track_number > 0 && { trackNumber: track_number }),
+        ...(disc_number > 0 && { discNumber: disc_number }),
     };
 };
 

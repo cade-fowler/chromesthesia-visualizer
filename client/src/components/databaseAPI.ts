@@ -1,5 +1,6 @@
 import type {
     AddColorRequest,
+    AlbumWithSongs,
     AuthStatus,
     ColorEntry,
     LibraryStats,
@@ -74,6 +75,14 @@ export const getSong = async (id: string): Promise<SongWithColors | null> => {
     return response.json();
 };
 
+/** Gets an album with its logged songs and their colors, or null if no song is from it. */
+export const getAlbum = async (id: string): Promise<AlbumWithSongs | null> => {
+    const response = await fetch(`/api/albums/${encodeURIComponent(id)}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw await errorFrom(response, 'Loading album');
+    return response.json();
+};
+
 /** Saves (creates or updates) the playing song's metadata. Its notes are left as they are. */
 export const saveSong = async (song: NowPlaying): Promise<void> => {
     const { id, isPlaying: _isPlaying, progressMs: _progressMs, ...rest } = song;
@@ -87,7 +96,17 @@ export const saveSong = async (song: NowPlaying): Promise<void> => {
  * are sent back as they are.
  */
 export const saveSongNotes = async (song: Song, notes: string[]): Promise<Song> => {
-    const { title, artists, albumImageUrl, songUrl, durationMs, album, artistUrls } = song;
+    const {
+        title,
+        artists,
+        albumImageUrl,
+        songUrl,
+        durationMs,
+        album,
+        artistUrls,
+        trackNumber,
+        discNumber,
+    } = song;
     const body: UpsertSongRequest = {
         title,
         artists,
@@ -96,6 +115,8 @@ export const saveSongNotes = async (song: Song, notes: string[]): Promise<Song> 
         durationMs,
         album,
         artistUrls,
+        trackNumber,
+        discNumber,
         notes,
     };
     const response = await sendJson(songPath(song.id), 'PUT', body);
