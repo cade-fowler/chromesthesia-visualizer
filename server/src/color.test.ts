@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FAMILY_COLORS, colorDistance, familyOf, hexToOkLch, songDistance } from './color.js';
+import {
+    CLOSE_DISTANCE,
+    FAMILY_COLORS,
+    colorDistance,
+    familyOf,
+    hexToOkLch,
+    songDistance,
+} from './color.js';
 
 describe('colorDistance', () => {
     it('is 0 for the same color and about 1 from black to white', () => {
@@ -63,6 +70,19 @@ describe('familyOf', () => {
         for (const [family, hex] of Object.entries(FAMILY_COLORS)) {
             expect(familyOf(hex)).toBe(family);
         }
+    });
+});
+
+describe('colorDistance with chroma weighting', () => {
+    it("doesn't count a grey as close to a muted color of the same lightness", () => {
+        // A dark grey and a dark brown, and a mid grey and a dark green
+        expect(colorDistance('#5b5b5b', '#725037')).toBeGreaterThan(CLOSE_DISTANCE);
+        expect(colorDistance('#393939', '#073b32')).toBeGreaterThan(CLOSE_DISTANCE);
+    });
+
+    it('still counts neighboring hues and slightly different greys as close', () => {
+        expect(colorDistance('#ff0000', '#ff4400')).toBeLessThan(CLOSE_DISTANCE);
+        expect(colorDistance('#393939', '#2e2d2a')).toBeLessThan(CLOSE_DISTANCE);
     });
 });
 

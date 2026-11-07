@@ -48,18 +48,33 @@ export const hexToOkLch = (hex: HexColor): OkLch => {
     return { L, C: Math.hypot(a, b), h: h < 0 ? h + 360 : h };
 };
 
-/** How different two colors look: 0 for the same color, about 1 from black to white. */
+/**
+ * How much more a difference in chroma counts than plain OKLab says. Chroma only reaches about
+ * 0.1 for dark colors, so without this a dark grey sits as close to a dark brown or green as to
+ * another grey.
+ */
+export const CHROMA_WEIGHT = 2.5;
+
+/**
+ * How different two colors look: 0 for the same color, about 1 from black to white. It's OKLab
+ * distance with the difference split into lightness, chroma and hue (as CIE94 does), and the
+ * chroma part weighted by CHROMA_WEIGHT, so a grey and a muted color are told apart while
+ * neighboring hues still match.
+ */
 export const colorDistance = (x: HexColor, y: HexColor): number => {
     const p = hexToOkLab(x);
     const q = hexToOkLab(y);
-    return Math.hypot(p.L - q.L, p.a - q.a, p.b - q.b);
+    const chroma = Math.hypot(p.a, p.b) - Math.hypot(q.a, q.b);
+    // What's left of the a/b difference once the chroma difference is taken out is the hue part
+    const hueSquared = Math.max(0, (p.a - q.a) ** 2 + (p.b - q.b) ** 2 - chroma ** 2);
+    return Math.sqrt((p.L - q.L) ** 2 + (CHROMA_WEIGHT * chroma) ** 2 + hueSquared);
 };
 
 /** Colors within this distance of the searched color count as close (Hex and HSL search). */
 export const CLOSE_DISTANCE = 0.12;
 
 /** Songs within this songDistance() of a song are listed as similar to it. */
-export const SIMILAR_DISTANCE = 0.15;
+export const SIMILAR_DISTANCE = 0.2;
 
 /** The mean distance from each of `from`'s colors to its closest color in `to`. */
 const meanClosest = (from: HexColor[], to: HexColor[]) =>
