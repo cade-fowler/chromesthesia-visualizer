@@ -78,7 +78,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     // A short confirmation shown beside the Add color button. The id restarts the timer when
     // the same message comes up twice in a row.
     const [notice, setNotice] = useState<{ text: string; id: number } | null>(null);
-    // Bumped when a song is deleted, so the song list loads again without it
+    // Bumped when a song is saved for the first time or deleted, so the song list loads again
     const [songListVersion, setSongListVersion] = useState(0);
     const exchangedCode = useRef(false);
 
@@ -206,8 +206,10 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
         }));
         notify('Color added');
-        // The song's first color saved the song itself; load its record so notes can be added
+        // The song's first color saved the song itself; load its record so notes can be added,
+        // and have the song list pick it up
         if (!storedLoad?.song) {
+            setSongListVersion((version) => version + 1);
             getSong(saved.songId)
                 .then((record) => {
                     if (record) setStored({ id: record.id, song: record });
