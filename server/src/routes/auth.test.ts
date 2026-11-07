@@ -120,6 +120,7 @@ describe('write routes', () => {
     const colorId = new ObjectId().toHexString();
     const writes = [
         ['put', `/api/songs/${songId}`],
+        ['delete', `/api/songs/${songId}`],
         ['post', `/api/songs/${songId}/colors`],
         ['patch', `/api/colors/${colorId}`],
         ['delete', `/api/colors/${colorId}`],

@@ -3,6 +3,7 @@ import type { NowPlaying } from '@chromesthesia/shared';
 import {
     addColor,
     deleteColor,
+    deleteSong,
     getAlbum,
     getRandomSong,
     getSong,
@@ -152,6 +153,28 @@ describe('deleteColor', () => {
     it('throws when the delete fails', async () => {
         fetchMock.mockResolvedValueOnce(respond(500));
         await expect(deleteColor(entry.id)).rejects.toThrow('Deleting color failed (500)');
+    });
+});
+
+describe('deleteSong', () => {
+    it('sends DELETE for the song, escaping its id', async () => {
+        fetchMock.mockResolvedValueOnce(respond(204));
+
+        await deleteSong('track 1');
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/songs/track%201', { method: 'DELETE' });
+    });
+
+    it('treats an already-deleted song as deleted', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
+        await expect(deleteSong('track 1')).resolves.toBeUndefined();
+    });
+
+    it("throws the server's message on other failures", async () => {
+        fetchMock.mockResolvedValueOnce(respond(401, { error: 'Not logged in' }));
+        await expect(deleteSong('track 1')).rejects.toThrow(
+            'Deleting song failed (401): Not logged in',
+        );
     });
 });
 

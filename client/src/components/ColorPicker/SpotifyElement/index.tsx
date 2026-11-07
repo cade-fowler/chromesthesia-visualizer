@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useOwner } from '../../../auth/OwnerContext';
 import SongSource from './SongSource';
 import SongNotes from './SongNotes';
+import DeleteSong from './DeleteSong';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from '../../ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
@@ -15,6 +16,7 @@ import Timeline from '../../Timeline';
 import {
     addColor,
     deleteColor,
+    deleteSong,
     getSong,
     logout as logoutOwner,
     saveColor,
@@ -76,6 +78,8 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     // A short confirmation shown beside the Add color button. The id restarts the timer when
     // the same message comes up twice in a row.
     const [notice, setNotice] = useState<{ text: string; id: number } | null>(null);
+    // Bumped when a song is deleted, so the song list loads again without it
+    const [songListVersion, setSongListVersion] = useState(0);
     const exchangedCode = useRef(false);
 
     useEffect(() => {
@@ -261,6 +265,19 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         }
     };
 
+    // Throws on failure so the confirmation stays up and shows the error
+    const handleDeleteSong = async () => {
+        if (!songId) return;
+        await deleteSong(songId);
+        stopEditing();
+        // The song is unsaved now; if it's playing, adding a color saves it again
+        setStored({ id: songId, song: null });
+        setLoadedColors({ songId, colors: [] });
+        setSongListVersion((version) => version + 1);
+        if (pickedId) pickSong(null);
+        notify('Song deleted');
+    };
+
     // Everything sounding right now: the whole-song colors plus the parts under the playhead
     const activeIds = new Set(
         positionMs === null ? [] : activeAt(colors, positionMs).map((entry) => entry.id),
@@ -305,7 +322,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     </button>
                 </span>
             </div>
-            <SongSource pickedId={pickedId} onPick={pickSong} />
+            <SongSource pickedId={pickedId} onPick={pickSong} listVersion={songListVersion} />
             {pickedId && storedLoad && !storedLoad.song ? (
                 <div className="flex flex-col items-start gap-3 well rounded-md p-4">
                     <p className="text-sm" role="alert">
@@ -417,6 +434,13 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     notes={storedLoad?.song?.notes ?? []}
                     saved={Boolean(storedLoad?.song)}
                     onSave={handleSaveNotes}
+                />
+            )}
+            {storedLoad?.song && (
+                <DeleteSong
+                    key={`delete-${songId}`}
+                    colorCount={colors.length}
+                    onDelete={handleDeleteSong}
                 />
             )}
             <div className="mt-2">
