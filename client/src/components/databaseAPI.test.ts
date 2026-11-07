@@ -3,7 +3,9 @@ import type { NowPlaying } from '@chromesthesia/shared';
 import {
     addColor,
     deleteColor,
+    getRandomSong,
     getSong,
+    getStats,
     listSongs,
     saveColor,
     saveSongNotes,
@@ -161,9 +163,54 @@ describe('listSongs', () => {
         expect(fetchMock.mock.calls[0][0]).toBe('/api/songs');
     });
 
+    it('sends the search, decade and limit as query params', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, []));
+
+        await listSongs({ q: 'a&b', decade: 1990, limit: 4 });
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs?q=a%26b&decade=1990&limit=4');
+    });
+
+    it('leaves out an empty search', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, []));
+
+        await listSongs({ q: '' });
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs');
+    });
+
     it('throws on an error response', async () => {
         fetchMock.mockResolvedValueOnce(respond(500, { error: 'boom' }));
         await expect(listSongs()).rejects.toThrow('Loading songs failed (500): boom');
+    });
+});
+
+describe('getRandomSong', () => {
+    it('asks for a song other than the one given', async () => {
+        const song = { id: 'a', title: 'A', artists: [], songUrl: 'u', colors: [] };
+        fetchMock.mockResolvedValueOnce(respond(200, song));
+
+        await expect(getRandomSong('x/y')).resolves.toEqual(song);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/random?not=x%2Fy');
+    });
+
+    it('resolves null when no song has colors', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'No songs with colors yet' }));
+        await expect(getRandomSong()).resolves.toBeNull();
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/random');
+    });
+});
+
+describe('getStats', () => {
+    it('returns the counts', async () => {
+        const stats = { songs: 1, colors: 2, artists: 1, parts: 1, decades: [1990] };
+        fetchMock.mockResolvedValueOnce(respond(200, stats));
+
+        await expect(getStats()).resolves.toEqual(stats);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/stats');
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(500));
+        await expect(getStats()).rejects.toThrow('Loading stats failed (500)');
     });
 });
 

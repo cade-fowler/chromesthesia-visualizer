@@ -88,6 +88,22 @@ export const updateColorSchema = z
 export const listQuerySchema = z.object({
     title: z.string().optional(),
     artist: z.string().optional(),
+    q: z.string().trim().max(200).optional(),
+    decade: z
+        .string()
+        .regex(/^\d{3}0$/, 'Expected a decade like 1990')
+        .transform(Number)
+        .optional(),
+    limit: z
+        .string()
+        .regex(/^\d+$/)
+        .transform(Number)
+        .pipe(z.number().int().min(1).max(200))
+        .optional(),
+});
+
+export const randomQuerySchema = z.object({
+    not: z.string().optional(),
 });
 
 export const loginSchema = z.object({

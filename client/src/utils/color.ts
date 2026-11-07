@@ -13,3 +13,15 @@ export const isDark = (hex: HexColor): boolean => {
 
 /** Readable text color for content drawn on top of `hex`. */
 export const textColorOn = (hex: HexColor) => (isDark(hex) ? LIGHT_TEXT : DARK_TEXT);
+
+/**
+ * A CSS background that splits its width into equal bands, one per color, left to right.
+ * Returns undefined for no colors.
+ */
+export const stripBackground = (colors: HexColor[]): string | undefined => {
+    if (colors.length === 0) return undefined;
+    if (colors.length === 1) return colors[0];
+    const band = 100 / colors.length;
+    const stops = colors.map((color, i) => `${color} ${i * band}% ${(i + 1) * band}%`);
+    return `linear-gradient(to right, ${stops.join(', ')})`;
+};
