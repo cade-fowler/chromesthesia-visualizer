@@ -171,6 +171,15 @@ describe('listSongs', () => {
         expect(fetchMock.mock.calls[0][0]).toBe('/api/songs?q=a%26b&decade=1990&limit=4');
     });
 
+    it('sends a search by color or by family', async () => {
+        fetchMock.mockImplementation(async () => respond(200, []));
+
+        await listSongs({ color: '#7fb3d5' });
+        await listSongs({ family: 'red', q: 'x' });
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs?color=%237fb3d5');
+        expect(fetchMock.mock.calls[1][0]).toBe('/api/songs?q=x&family=red');
+    });
+
     it('leaves out an empty search', async () => {
         fetchMock.mockResolvedValueOnce(respond(200, []));
 

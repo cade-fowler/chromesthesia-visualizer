@@ -31,8 +31,8 @@ const errorFrom = async (response: Response, what: string) => {
 };
 
 /**
- * Lists saved songs, newest first, each with its colors' hex values. Without a limit the API
- * returns up to 50.
+ * Lists saved songs, newest first, each with its colors' hex values. A search by color or family
+ * puts the closest match first instead. Without a limit the API returns up to 50.
  */
 export const listSongs = async (
     query: ListSongsQuery = {},
@@ -41,6 +41,8 @@ export const listSongs = async (
     const params = new URLSearchParams();
     if (query.q) params.set('q', query.q);
     if (query.decade !== undefined) params.set('decade', String(query.decade));
+    if (query.color) params.set('color', query.color);
+    if (query.family) params.set('family', query.family);
     if (query.limit !== undefined) params.set('limit', String(query.limit));
     const search = params.toString();
     const response = await fetch(search ? `/api/songs?${search}` : '/api/songs', { signal });

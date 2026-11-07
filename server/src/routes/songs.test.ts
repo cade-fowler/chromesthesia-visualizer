@@ -354,6 +354,9 @@ describe('GET /api/songs', () => {
         ['a limit of 0', { limit: '0' }],
         ['a limit over 200', { limit: '201' }],
         ['a limit that is not a number', { limit: 'ten' }],
+        ['a color that is not a hex', { color: 'red' }],
+        ['an unknown family', { family: 'teal' }],
+        ['both a color and a family', { color: '#ff0000', family: 'red' }],
     ])('rejects %s with 400', async (_label, query) => {
         expect((await api.get('/api/songs').query(query)).status).toBe(400);
     });
@@ -363,6 +366,83 @@ describe('GET /api/songs', () => {
         const res = await api.get('/api/songs').query({ artist: 'Lowswimmer' });
 
         expect(res.body.map((s: { id: string }) => s.id)).toEqual([id]);
+    });
+
+    describe('search by color', () => {
+        type Found = { id: string; match?: { color: string; distance: number } };
+        const ids = (body: Found[]) => body.map((s) => s.id);
+
+        // Three songs: a red one with a blue part, a pink one, and a green one
+        const seedColors = async () => {
+            await putSong(song, 'red');
+            await addColor({ color: '#d03020' }, 'red');
+            await addColor({ color: '#2f6fd6', startMs: 0, endMs: 1000 }, 'red');
+            await putSong({ ...song, title: 'Pink' }, 'pink');
+            await addColor({ color: '#f2c4ce' }, 'pink');
+            await putSong({ ...song, title: 'Green' }, 'green');
+            await addColor({ color: '#3fa34d' }, 'green');
+        };
+
+        it('finds songs with a color close to ?color=, closest first', async () => {
+            await seedColors();
+            await putSong(song, 'near');
+            await addColor({ color: '#d84030' }, 'near');
+
+            const res = await api.get('/api/songs').query({ color: '#D03020' });
+            expect(res.status).toBe(200);
+            // The pink is too far from #d03020 to count; the green and blue are nowhere near
+            expect(ids(res.body)).toEqual(['red', 'near']);
+            expect(res.body[0].match).toEqual({ color: '#d03020', distance: 0 });
+            expect(res.body[1].match.distance).toBeGreaterThan(0);
+        });
+
+        it("scores a song by its single closest color, even if it's only a part", async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ color: '#3070d0' });
+
+            expect(ids(res.body)).toEqual(['red']);
+            expect(res.body[0].match.color).toBe('#2f6fd6');
+        });
+
+        it('finds songs with any color in ?family=, closest to the swatch first', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ family: 'red' });
+
+            // Pastel pink is far from the red swatch but still counts as red
+            expect(ids(res.body)).toEqual(['red', 'pink']);
+            expect(res.body[0].match.color).toBe('#d03020');
+            expect(res.body[1].match.color).toBe('#f2c4ce');
+        });
+
+        it('only matches colors in the family', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ family: 'blue' });
+
+            expect(ids(res.body)).toEqual(['red']);
+            expect(res.body[0].match.color).toBe('#2f6fd6');
+        });
+
+        it('combines with the other filters', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ family: 'red', q: 'pink' });
+
+            expect(ids(res.body)).toEqual(['pink']);
+        });
+
+        it('applies the limit after ranking', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ family: 'red', limit: '1' });
+
+            expect(ids(res.body)).toEqual(['red']);
+        });
+
+        it('leaves match out of other lists', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs');
+
+            expect(res.body).toHaveLength(3);
+            for (const found of res.body) expect(found).not.toHaveProperty('match');
+        });
     });
 
     it('rejects Mongo operators in query params', async () => {

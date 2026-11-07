@@ -5,11 +5,15 @@ import { ObjectId } from 'mongodb';
 import type {
     ApiError,
     ColorEntry,
+    ColorFamily,
+    ColorMatch,
+    HexColor,
     Song,
     SongSummary,
     SongWithColors,
 } from '@chromesthesia/shared';
 import { requireOwner } from '../auth.js';
+import { CLOSE_DISTANCE, FAMILY_COLORS, colorDistance, familyOf } from '../color.js';
 import { colors, songOrder, songs, toColorEntry } from '../db.js';
 import {
     addColorSchema,
@@ -34,15 +38,32 @@ const colorsFor = async (songId: string): Promise<ColorEntry[]> => {
     return docs.map(toColorEntry);
 };
 
+// The song's color closest to target, among those in family when one is given
+const closestColor = (
+    hexes: HexColor[],
+    target: HexColor,
+    family?: ColorFamily,
+): ColorMatch | undefined => {
+    let best: ColorMatch | undefined;
+    for (const hex of hexes) {
+        if (family !== undefined && familyOf(hex) !== family) continue;
+        const distance = colorDistance(hex, target);
+        if (!best || distance < best.distance) best = { color: hex, distance };
+    }
+    return best;
+};
+
 // Escapes text so it matches literally inside a RegExp
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // List songs, newest first, each with its colors' hex values. Filters: ?title= and ?artist=
-// (exact), ?q= (text in the title, an artist or the album name), ?decade= and ?limit=.
+// (exact), ?q= (text in the title, an artist or the album name), ?decade=, and a search by
+// color: ?color= (close to this hex) or ?family= (any color in that family), which rank the
+// closest match first. ?limit= caps the results.
 router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid query' });
-    const { title, artist, q, decade, limit = 50 } = parsed.data;
+    const { title, artist, q, decade, color, family, limit = 50 } = parsed.data;
 
     const filter: Document = {};
     if (title) filter.title = title;
@@ -53,6 +74,10 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
     }
     // releaseDate starts with the year, so 1990 matches "199…"
     if (decade !== undefined) filter['album.releaseDate'] = { $regex: `^${decade / 10}` };
+
+    // A search by color scores every song in Node (Mongo can't do the color math), so the limit
+    // applies after ranking instead of in the pipeline
+    const byColor = color !== undefined || family !== undefined;
 
     const docs = await songs()
         .aggregate<Song & { colors: string[]; addedAt: Date | null }>([
@@ -78,16 +103,28 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
             },
             // Songs with no colors have a null addedAt, which sorts last
             { $sort: { addedAt: -1, title: 1, id: 1 } },
-            { $limit: limit },
+            ...(byColor ? [] : [{ $limit: limit }]),
             { $project: { _id: 0, colorDocs: 0 } },
         ])
         .toArray();
 
-    res.json(
-        docs.map(({ addedAt, ...song }) =>
-            addedAt ? { ...song, addedAt: addedAt.toISOString() } : song,
-        ),
+    const summaries: SongSummary[] = docs.map(({ addedAt, ...song }) =>
+        addedAt ? { ...song, addedAt: addedAt.toISOString() } : song,
     );
+    if (!byColor) return res.json(summaries);
+
+    const target = color ?? FAMILY_COLORS[family!];
+    const ranked = summaries
+        .map((song) => ({ ...song, match: closestColor(song.colors, target, family) }))
+        .filter((song): song is SongSummary & { match: ColorMatch } => {
+            if (!song.match) return false;
+            // A family match counts however far it is from the swatch; an exact search has a cutoff
+            return family !== undefined || song.match.distance <= CLOSE_DISTANCE;
+        })
+        // Stable sort, so equally close songs stay newest first
+        .sort((a, b) => a.match.distance - b.match.distance)
+        .slice(0, limit);
+    res.json(ranked);
 });
 
 // One random song that has colors, with its colors. ?not= skips a song (the one on screen)

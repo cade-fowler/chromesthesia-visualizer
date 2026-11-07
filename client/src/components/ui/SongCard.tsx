@@ -4,7 +4,10 @@ import { songPagePath } from '../../utils/paths';
 import AlbumArt from './AlbumArt';
 import ColorStrip from './ColorStrip';
 
-/** A song in a list: art, title, artists and a strip of its colors, opening its song page. */
+/**
+ * A song in a list: art, title, artists and a strip of its colors, opening its song page. In a
+ * search by color, the color that matched is outlined in the strip.
+ */
 const SongCard = ({ song }: { song: SongSummary }) => (
     <Link
         to={songPagePath(song.id)}
@@ -14,7 +17,12 @@ const SongCard = ({ song }: { song: SongSummary }) => (
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate font-bold tracking-[-0.01em]">{song.title}</span>
             <span className="truncate text-sm text-silk">{song.artists.join(', ')}</span>
-            <ColorStrip colors={song.colors} className="mt-1.5 h-2.5" />
+            <ColorStrip
+                colors={song.colors}
+                highlight={song.match?.color}
+                className={`mt-1.5 ${song.match ? 'h-3.5' : 'h-2.5'}`}
+            />
+            {song.match && <span className="sr-only">Matched {song.match.color}</span>}
         </span>
     </Link>
 );
