@@ -9,6 +9,8 @@ interface SongSourceProps {
     pickedId: string | null;
     /** Pins the Studio to a saved song, or (null) goes back to following Spotify */
     onPick: (songId: string | null) => void;
+    /** Bumped when a song is saved or deleted, so the list loads again the next time it's open */
+    listVersion: number;
 }
 
 const sourceKey = (down: boolean) =>
@@ -24,29 +26,34 @@ const matches = (song: Song, filter: string) => {
 };
 
 /** Which song the Studio works on: the one playing on Spotify, or any saved song. */
-const SongSource = ({ pickedId, onPick }: SongSourceProps) => {
+const SongSource = ({ pickedId, onPick, listVersion }: SongSourceProps) => {
     const [open, setOpen] = useState(false);
-    const [songs, setSongs] = useState<Song[] | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    // The list with the version it was loaded at; an older list stays up while a newer one loads
+    const [loaded, setLoaded] = useState<{ songs: Song[]; version: number } | null>(null);
+    const [error, setError] = useState<{ message: string; version: number } | null>(null);
     const [filter, setFilter] = useState('');
 
-    // Load the list the first time it's opened
-    const needsSongs = open && songs === null && error === null;
+    // Load the list when it's opened and hasn't been loaded since the last change
+    const needsSongs = open && loaded?.version !== listVersion && error?.version !== listVersion;
     useEffect(() => {
         if (!needsSongs) return;
         let cancelled = false;
         // Its filter runs in the browser, so load as many as the API allows
         listSongs({ limit: 200 })
             .then((list) => {
-                if (!cancelled) setSongs(list);
+                if (cancelled) return;
+                setLoaded({ songs: list, version: listVersion });
+                setError(null);
             })
             .catch((err: Error) => {
-                if (!cancelled) setError(err.message);
+                if (!cancelled) setError({ message: err.message, version: listVersion });
             });
         return () => {
             cancelled = true;
         };
-    }, [needsSongs]);
+    }, [needsSongs, listVersion]);
+
+    const songs = loaded?.songs ?? null;
 
     const pick = (songId: string | null) => {
         setOpen(false);
@@ -96,7 +103,7 @@ const SongSource = ({ pickedId, onPick }: SongSourceProps) => {
                     />
                     {error ? (
                         <p className="px-1 text-sm font-bold text-danger" role="alert">
-                            {error}
+                            {error.message}
                         </p>
                     ) : !songs ? (
                         <p className="px-1 text-sm text-silk">Loading…</p>

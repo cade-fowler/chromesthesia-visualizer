@@ -132,6 +132,33 @@ describe('PUT /api/songs/:id', () => {
     });
 });
 
+describe('DELETE /api/songs/:id', () => {
+    it('deletes the song and its colors with 204, leaving other songs alone', async () => {
+        const otherId = '2XZPtZVqcOzzxbYIR7MjQw';
+        await putSong();
+        await putSong(song, otherId);
+        await addColor({ color: '#ff0000' });
+        await addColor({ color: '#00ff00', startMs: 1000, endMs: 2000 });
+        await addColor({ color: '#0000ff' }, otherId);
+
+        const res = await api.delete(`/api/songs/${id}`);
+
+        expect(res.status).toBe(204);
+        expect(await songs().findOne({ id })).toBeNull();
+        expect(await colors().countDocuments({ songId: id })).toBe(0);
+        expect(await songs().countDocuments({ id: otherId })).toBe(1);
+        expect(await colors().countDocuments({ songId: otherId })).toBe(1);
+        expect((await api.get(`/api/songs/${id}`)).status).toBe(404);
+    });
+
+    it('returns 404 for an unknown song', async () => {
+        const res = await api.delete(`/api/songs/${id}`);
+
+        expect(res.status).toBe(404);
+        expect(res.body).toEqual({ error: 'Song not found' });
+    });
+});
+
 describe('POST /api/songs/:id/colors', () => {
     it('adds a color entry with 201', async () => {
         await putSong();

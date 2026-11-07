@@ -157,6 +157,14 @@ export const deleteColor = async (id: string): Promise<void> => {
     }
 };
 
+/** Deletes a saved song and all its colors. One that's already gone counts as deleted. */
+export const deleteSong = async (id: string): Promise<void> => {
+    const response = await fetch(songPath(id), { method: 'DELETE' });
+    if (!response.ok && response.status !== 404) {
+        throw await errorFrom(response, 'Deleting song');
+    }
+};
+
 /** Whether this browser is logged in as the owner. */
 export const getAuthStatus = async (): Promise<AuthStatus> => {
     const response = await fetch('/api/auth/me');

@@ -186,6 +186,15 @@ router.put<IdParams, Song | ApiError>('/:id', requireOwner, async (req, res) => 
     res.status(result.upsertedCount ? 201 : 200).json(saved!);
 });
 
+// Delete a song and all its colors. The colors go first, so a failure partway leaves the song
+// in place to retry rather than colors pointing at a song that's gone.
+router.delete<IdParams, ApiError>('/:id', requireOwner, async (req, res) => {
+    await colors().deleteMany({ songId: req.params.id });
+    const result = await songs().deleteOne({ id: req.params.id });
+    if (!result.deletedCount) return res.status(404).json({ error: 'Song not found' });
+    res.status(204).end();
+});
+
 // Get the colors for one song, in song order
 router.get<IdParams, ColorEntry[] | ApiError>('/:id/colors', async (req, res) => {
     if (!(await songExists(req.params.id))) {
