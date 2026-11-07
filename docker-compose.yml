@@ -13,11 +13,12 @@ services:
       PORT: 5050
       OWNER_PASSWORD_HASH: ${OWNER_PASSWORD_HASH:?Set OWNER_PASSWORD_HASH in .env}
       SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
-      # Only safe because the port below is reachable from this machine alone (the tunnel)
-      TRUST_CLOUDFLARE: 'true'
-    # Loopback only: cloudflared on this host reaches it; nothing else can
+      # Count failed logins per visitor, not per tunnel. Someone on the LAN could fake this
+      # header to dodge the login limit; set it to false if you don't trust your network.
+      TRUST_CLOUDFLARE: ${TRUST_CLOUDFLARE:-true}
+    # The tunnel and the local network (http://<server-ip>:5050, read-only: see README)
     ports:
-      - '127.0.0.1:${PORT:-5050}:5050'
+      - '${PORT:-5050}:5050'
     depends_on:
       mongo:
         condition: service_healthy

@@ -132,9 +132,14 @@ cp .env.example .env               # Spotify client id, owner password hash, ses
 docker compose up -d --build
 ```
 
-- The app listens on `127.0.0.1:5050` only, so the tunnel (`cloudflared` on the same host) is the
-  one way in. That's what makes `TRUST_CLOUDFLARE=true` safe. If `cloudflared` runs in Docker
-  instead, put it on this compose network and point it at `http://app:5050`.
+- The app listens on port 5050 on every interface: point the tunnel at `http://127.0.0.1:5050`
+  (or, if `cloudflared` runs in Docker, put it on this compose network and use `http://app:5050`).
+- On the local network, `http://<server-ip>:5050` works for browsing but not for writing: the
+  session cookie is `Secure` (HTTPS only) and Spotify only redirects to HTTPS or loopback
+  addresses, so log in and use the Studio through the tunnel.
+- `TRUST_CLOUDFLARE` defaults to `true` so failed logins are limited per visitor rather than per
+  tunnel. Because the port is also open to the LAN, someone there could fake `CF-Connecting-IP`
+  to get around that limit; set `TRUST_CLOUDFLARE=false` in `.env` if your network isn't trusted.
 - MongoDB has no published port; its data is in the `mongo-data` volume.
 - In the Spotify dashboard, add the site's origin (e.g. `https://colors.example.com`) as a
   redirect URI.
