@@ -8,17 +8,26 @@ import type {
     ColorFamily,
     ColorMatch,
     HexColor,
+    SimilarSong,
     Song,
     SongSummary,
     SongWithColors,
 } from '@chromesthesia/shared';
 import { requireOwner } from '../auth.js';
-import { CLOSE_DISTANCE, FAMILY_COLORS, colorDistance, familyOf } from '../color.js';
+import {
+    CLOSE_DISTANCE,
+    FAMILY_COLORS,
+    SIMILAR_DISTANCE,
+    colorDistance,
+    familyOf,
+    songDistance,
+} from '../color.js';
 import { colors, songOrder, songs, toColorEntry } from '../db.js';
 import {
     addColorSchema,
     listQuerySchema,
     randomQuerySchema,
+    similarQuerySchema,
     upsertSongSchema,
 } from '../validation.js';
 
@@ -53,6 +62,31 @@ const closestColor = (
     return best;
 };
 
+// Aggregation stages that give each song its colors' hex values in song order (as in
+// colorsFor()) and addedAt, the time of its first color (null when it has none)
+const summaryStages: Document[] = [
+    {
+        $lookup: {
+            from: 'colors',
+            localField: 'id',
+            foreignField: 'songId',
+            pipeline: [{ $sort: songOrder }, { $project: { _id: 0, color: 1, createdAt: 1 } }],
+            as: 'colorDocs',
+        },
+    },
+    {
+        $addFields: {
+            colors: '$colorDocs.color',
+            addedAt: { $min: '$colorDocs.createdAt' },
+        },
+    },
+];
+
+type SummaryDoc = Song & { colors: HexColor[]; addedAt: Date | null };
+
+const toSummary = ({ addedAt, ...song }: SummaryDoc): SongSummary =>
+    addedAt ? { ...song, addedAt: addedAt.toISOString() } : song;
+
 // Escapes text so it matches literally inside a RegExp
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -80,27 +114,9 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
     const byColor = color !== undefined || family !== undefined;
 
     const docs = await songs()
-        .aggregate<Song & { colors: string[]; addedAt: Date | null }>([
+        .aggregate<SummaryDoc>([
             { $match: filter },
-            {
-                $lookup: {
-                    from: 'colors',
-                    localField: 'id',
-                    foreignField: 'songId',
-                    // Song order, as in colorsFor()
-                    pipeline: [
-                        { $sort: songOrder },
-                        { $project: { _id: 0, color: 1, createdAt: 1 } },
-                    ],
-                    as: 'colorDocs',
-                },
-            },
-            {
-                $addFields: {
-                    colors: '$colorDocs.color',
-                    addedAt: { $min: '$colorDocs.createdAt' },
-                },
-            },
+            ...summaryStages,
             // Songs with no colors have a null addedAt, which sorts last
             { $sort: { addedAt: -1, title: 1, id: 1 } },
             ...(byColor ? [] : [{ $limit: limit }]),
@@ -108,9 +124,7 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
         ])
         .toArray();
 
-    const summaries: SongSummary[] = docs.map(({ addedAt, ...song }) =>
-        addedAt ? { ...song, addedAt: addedAt.toISOString() } : song,
-    );
+    const summaries = docs.map(toSummary);
     if (!byColor) return res.json(summaries);
 
     const target = color ?? FAMILY_COLORS[family!];
@@ -193,6 +207,41 @@ router.delete<IdParams, ApiError>('/:id', requireOwner, async (req, res) => {
     const result = await songs().deleteOne({ id: req.params.id });
     if (!result.deletedCount) return res.status(404).json({ error: 'Song not found' });
     res.status(204).end();
+});
+
+// Songs whose colors are close to this one's (songDistance() within SIMILAR_DISTANCE, and at
+// least one color within CLOSE_DISTANCE of one of this song's), closest first. Every song is scored in Node, like a search by color. ?limit= caps the results.
+router.get<IdParams, SimilarSong[] | ApiError>('/:id/similar', async (req, res) => {
+    const parsed = similarQuerySchema.safeParse(req.query);
+    if (!parsed.success) return res.status(400).json({ error: 'Invalid query' });
+    const { limit = 6 } = parsed.data;
+
+    if (!(await songExists(req.params.id))) {
+        return res.status(404).json({ error: 'Song not found' });
+    }
+    const target = (await colorsFor(req.params.id)).map((entry) => entry.color);
+    if (target.length === 0) return res.json([]);
+
+    const docs = await songs()
+        .aggregate<SummaryDoc>([
+            { $match: { id: { $ne: req.params.id } } },
+            ...summaryStages,
+            { $match: { 'colors.0': { $exists: true } } },
+            // Newest first, so equally close songs stay in that order after the stable sort
+            { $sort: { addedAt: -1, title: 1, id: 1 } },
+            { $project: { _id: 0, colorDocs: 0 } },
+        ])
+        .toArray();
+
+    const similar: SimilarSong[] = docs
+        .map((doc) => {
+            const { distance, close } = songDistance(target, doc.colors);
+            return { ...toSummary(doc), similarity: { distance, close, total: target.length } };
+        })
+        .filter(({ similarity }) => similarity.distance <= SIMILAR_DISTANCE && similarity.close > 0)
+        .sort((a, b) => a.similarity.distance - b.similarity.distance)
+        .slice(0, limit);
+    res.json(similar);
 });
 
 // Get the colors for one song, in song order

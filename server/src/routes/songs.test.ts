@@ -526,3 +526,65 @@ it('returns JSON 404 for unknown API routes', async () => {
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: 'Not found' });
 });
+
+describe('GET /api/songs/:id/similar', () => {
+    const songWith = async (songId: string, title: string, hexes: string[]) => {
+        await putSong({ ...song, title }, songId);
+        for (const color of hexes) await addColor({ color }, songId);
+    };
+    const similar = (query = '', songId = id) => api.get(`/api/songs/${songId}/similar${query}`);
+
+    it('lists close songs, closest first, without the song itself or far and colorless ones', async () => {
+        await songWith(id, 'Ontario', ['#ff0000', '#0000ff']);
+        await songWith('same', 'Same', ['#0000ff', '#ff0000']);
+        await songWith('near', 'Near', ['#f00000', '#0000f0', '#0000f0']);
+        await songWith('far', 'Far', ['#00ff00']);
+        await songWith('empty', 'Empty', []);
+
+        const res = await similar();
+
+        expect(res.status).toBe(200);
+        expect(res.body.map((s: { id: string }) => s.id)).toEqual(['same', 'near']);
+        expect(res.body[0]).toMatchObject({
+            title: 'Same',
+            colors: ['#0000ff', '#ff0000'],
+            similarity: { distance: 0, close: 2, total: 2 },
+        });
+        expect(res.body[0]).not.toHaveProperty('_id');
+        expect(res.body[0]).not.toHaveProperty('colorDocs');
+        expect(res.body[1].similarity.distance).toBeGreaterThan(0);
+    });
+
+    it('leaves out a song with no close color, even when its score is under the cutoff', async () => {
+        await songWith(id, 'Ontario', ['#ff0000']);
+        // About 0.13 from red: under SIMILAR_DISTANCE but not within CLOSE_DISTANCE
+        await songWith('orange', 'Orange', ['#ff7400']);
+
+        expect((await similar()).body).toEqual([]);
+    });
+
+    it('applies the limit', async () => {
+        await songWith(id, 'Ontario', ['#ff0000']);
+        await songWith('a', 'A', ['#ff0000']);
+        await songWith('b', 'B', ['#ff0000']);
+
+        const res = await similar('?limit=1');
+
+        expect(res.body).toHaveLength(1);
+    });
+
+    it('returns [] for a song with no colors', async () => {
+        await songWith(id, 'Ontario', []);
+        await songWith('a', 'A', ['#ff0000']);
+
+        expect((await similar()).body).toEqual([]);
+    });
+
+    it('returns 404 for an unknown song and 400 for a bad limit', async () => {
+        expect((await similar()).status).toBe(404);
+        await putSong();
+        for (const query of ['?limit=0', '?limit=21', '?limit=x', '?limit[$gt]=1']) {
+            expect((await similar(query)).status).toBe(400);
+        }
+    });
+});

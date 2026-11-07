@@ -6,6 +6,7 @@ import {
     deleteSong,
     getAlbum,
     getRandomSong,
+    getSimilarSongs,
     getSong,
     getStats,
     listSongs,
@@ -249,6 +250,29 @@ describe('getAlbum', () => {
     it('throws on an error response', async () => {
         fetchMock.mockResolvedValueOnce(respond(500));
         await expect(getAlbum('x')).rejects.toThrow('Loading album failed (500)');
+    });
+});
+
+describe('getSimilarSongs', () => {
+    it('fetches the similar songs, escaping the id', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, []));
+
+        await expect(getSimilarSongs('track 1')).resolves.toEqual([]);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/track%201/similar');
+    });
+
+    it('passes a limit', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, []));
+
+        await getSimilarSongs('x', undefined, 3);
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs/x/similar?limit=3');
+    });
+
+    it('throws on an error response', async () => {
+        fetchMock.mockResolvedValueOnce(respond(404, { error: 'Song not found' }));
+        await expect(getSimilarSongs('x')).rejects.toThrow(
+            'Loading similar songs failed (404): Song not found',
+        );
     });
 });
 

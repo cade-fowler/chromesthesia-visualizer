@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FAMILY_COLORS, colorDistance, familyOf, hexToOkLch } from './color.js';
+import {
+    CLOSE_DISTANCE,
+    FAMILY_COLORS,
+    colorDistance,
+    familyOf,
+    hexToOkLch,
+    songDistance,
+} from './color.js';
 
 describe('colorDistance', () => {
     it('is 0 for the same color and about 1 from black to white', () => {
@@ -63,5 +70,58 @@ describe('familyOf', () => {
         for (const [family, hex] of Object.entries(FAMILY_COLORS)) {
             expect(familyOf(hex)).toBe(family);
         }
+    });
+});
+
+describe('colorDistance with chroma weighting', () => {
+    it("doesn't count a grey as close to a muted color of the same lightness", () => {
+        // A dark grey and a dark brown, and a mid grey and a dark green
+        expect(colorDistance('#5b5b5b', '#725037')).toBeGreaterThan(CLOSE_DISTANCE);
+        expect(colorDistance('#393939', '#073b32')).toBeGreaterThan(CLOSE_DISTANCE);
+    });
+
+    it('still counts neighboring hues and slightly different greys as close', () => {
+        expect(colorDistance('#ff0000', '#ff4400')).toBeLessThan(CLOSE_DISTANCE);
+        expect(colorDistance('#393939', '#2e2d2a')).toBeLessThan(CLOSE_DISTANCE);
+    });
+});
+
+describe('songDistance', () => {
+    it('is 0 for the same palette, whatever the order', () => {
+        expect(songDistance(['#ff0000', '#0000ff'], ['#0000ff', '#ff0000'])).toEqual({
+            distance: 0,
+            close: 2,
+        });
+    });
+
+    it('scores the same either way round', () => {
+        const a = ['#ff0000', '#0000ff'] as const;
+        const b = ['#ff4400'] as const;
+        expect(songDistance([...a], [...b]).distance).toBeCloseTo(
+            songDistance([...b], [...a]).distance,
+            10,
+        );
+    });
+
+    it('rises with an extra color the other song lacks', () => {
+        const base = songDistance(['#ff0000'], ['#ff0000']).distance;
+        const extra = songDistance(['#ff0000'], ['#ff0000', '#00ff00']).distance;
+        expect(extra).toBeGreaterThan(base);
+    });
+
+    it('averages each color with its closest match, both ways', () => {
+        const far = colorDistance('#0000ff', '#ff0000');
+        // red→red 0, blue→red far: mean far/2. Back: red→red 0. Overall far/4.
+        expect(songDistance(['#ff0000', '#0000ff'], ['#ff0000']).distance).toBeCloseTo(far / 4);
+    });
+
+    it('weighs a color logged several times more', () => {
+        const once = songDistance(['#ff0000', '#0000ff'], ['#ff0000']).distance;
+        const twice = songDistance(['#ff0000', '#ff0000', '#0000ff'], ['#ff0000']).distance;
+        expect(twice).toBeLessThan(once);
+    });
+
+    it("counts a's colors with a close match in b", () => {
+        expect(songDistance(['#ff0000', '#fe0101', '#0000ff'], ['#ff0000']).close).toBe(2);
     });
 });

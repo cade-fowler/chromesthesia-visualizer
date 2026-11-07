@@ -120,6 +120,15 @@ export const listQuerySchema = z
     })
     .refine((query) => !(query.color && query.family), 'Search by color or family, not both');
 
+export const similarQuerySchema = z.object({
+    limit: z
+        .string()
+        .regex(/^\d+$/)
+        .transform(Number)
+        .pipe(z.number().int().min(1).max(20))
+        .optional(),
+});
+
 export const randomQuerySchema = z.object({
     not: z.string().optional(),
 });
