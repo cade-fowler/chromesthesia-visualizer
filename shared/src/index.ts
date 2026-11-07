@@ -88,13 +88,33 @@ export interface SongWithColors extends Song {
 
 /**
  * One item of GET /api/songs: the song with just the hex values of its colors, for drawing a
- * strip. Newest first, by when the song got its first color.
+ * strip. Newest first, by when the song got its first color, except in a search by color,
+ * which puts the closest match first.
  */
 export interface SongSummary extends Song {
     /** The song's colors in song order (the same order as SongWithColors.colors) */
     colors: HexColor[];
     /** ISO 8601 timestamp of the song's first color; missing for a song with no colors */
     addedAt?: string;
+    /** The song's color that matched a search by color; only present for those searches */
+    match?: ColorMatch;
+}
+
+/**
+ * The named color groups the home page's swatches search by. A color's family comes from its
+ * OKLCH hue, or from its lightness when it's too grey to have one (white and black).
+ */
+export type ColorFamily =
+    'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'white' | 'black';
+
+/** Which of a song's colors matched a search by color, and how close it was. */
+export interface ColorMatch {
+    color: HexColor;
+    /**
+     * OKLab distance to the searched color (or to the family's swatch color): 0 is the same
+     * color, about 1 is black to white
+     */
+    distance: number;
 }
 
 /** Query of GET /api/songs. Every filter is optional; they combine with AND. */
@@ -103,6 +123,16 @@ export interface ListSongsQuery {
     q?: string;
     /** A decade such as 1990: songs whose album came out from 1990 to 1999 */
     decade?: number;
+    /**
+     * Songs with a color close to this one, closest first. A song's score is its single
+     * closest color. Can't be combined with family.
+     */
+    color?: HexColor;
+    /**
+     * Songs with any color in this family, ranked by how close that color is to the family's
+     * swatch. Can't be combined with color.
+     */
+    family?: ColorFamily;
     /** How many songs to return, 1–200 (default 50) */
     limit?: number;
 }

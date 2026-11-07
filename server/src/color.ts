@@ -1,0 +1,120 @@
+import type { ColorFamily, HexColor } from '@chromesthesia/shared';
+
+/**
+ * Color math for search by color. Colors are compared in OKLab, a perceptual color space:
+ * straight-line distance there roughly matches how different two colors look. OKLCH is the same
+ * space in polar form: L (lightness, 0–1), C (chroma, how colorful; about 0–0.37 for sRGB) and
+ * h (hue angle in degrees).
+ */
+
+export interface OkLab {
+    L: number;
+    a: number;
+    b: number;
+}
+
+export interface OkLch {
+    L: number;
+    C: number;
+    /** Hue in degrees, 0 to 360 (meaningless when C is near 0) */
+    h: number;
+}
+
+const toLinear = (channel: number) => {
+    const c = channel / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+
+/** Converts a lowercase "#rrggbb" color to OKLab (Björn Ottosson's matrices). */
+export const hexToOkLab = (hex: HexColor): OkLab => {
+    const r = toLinear(parseInt(hex.slice(1, 3), 16));
+    const g = toLinear(parseInt(hex.slice(3, 5), 16));
+    const b = toLinear(parseInt(hex.slice(5, 7), 16));
+
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+    return {
+        L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+        a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+        b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+    };
+};
+
+export const hexToOkLch = (hex: HexColor): OkLch => {
+    const { L, a, b } = hexToOkLab(hex);
+    const h = (Math.atan2(b, a) * 180) / Math.PI;
+    return { L, C: Math.hypot(a, b), h: h < 0 ? h + 360 : h };
+};
+
+/** How different two colors look: 0 for the same color, about 1 from black to white. */
+export const colorDistance = (x: HexColor, y: HexColor): number => {
+    const p = hexToOkLab(x);
+    const q = hexToOkLab(y);
+    return Math.hypot(p.L - q.L, p.a - q.a, p.b - q.b);
+};
+
+/** Colors within this distance of the searched color count as close (Hex and HSL search). */
+export const CLOSE_DISTANCE = 0.12;
+
+/**
+ * Below this chroma a color is greyish, so it counts as white or black instead of a hue.
+ * Pastels such as #f2c4ce (about 0.05) still count as their hue; creams such as #efeae0 don't.
+ */
+export const GREY_CHROMA = 0.035;
+
+/** Lighter than this, a greyish color is white; otherwise it's black. */
+const WHITE_LIGHTNESS = 0.6;
+
+/** Darker than this, any color is black: its hue is too dark to see. */
+const BLACK_LIGHTNESS = 0.2;
+
+interface HueFamily {
+    family: Exclude<ColorFamily, 'white' | 'black'>;
+    /** OKLCH hue where the band starts, inclusive; it runs to the next family's start */
+    from: number;
+}
+
+/**
+ * Hue bands, in order around the wheel. Each runs from its `from` to the next one's; purple's
+ * runs past 360 back to red's. For reference, OKLCH hues of the sRGB primaries: red 29°,
+ * orange (#ff8000) 55°, yellow 110°, green 142°, cyan 195°, blue 264°, magenta 328°.
+ * Pinks (about 350°–10°) land in red.
+ */
+const HUE_BANDS: HueFamily[] = [
+    { family: 'red', from: 345 },
+    { family: 'orange', from: 42 },
+    { family: 'yellow', from: 75 },
+    { family: 'green', from: 120 },
+    { family: 'blue', from: 180 },
+    { family: 'purple', from: 285 },
+];
+
+/**
+ * The color each family's results are ranked against: a song whose matching color is closest
+ * to it comes first. The client's swatches (client/src/utils/colorFamilies.ts) use the same hexes.
+ */
+export const FAMILY_COLORS: Record<ColorFamily, HexColor> = {
+    red: '#e0352b',
+    orange: '#f08a24',
+    yellow: '#f2d02e',
+    green: '#3fa34d',
+    blue: '#2f6fd6',
+    purple: '#8a4fc7',
+    white: '#f7f7f4',
+    black: '#1c1c1d',
+};
+
+/** The named family a color belongs to, as the home page's swatches group colors. */
+export const familyOf = (hex: HexColor): ColorFamily => {
+    const { L, C, h } = hexToOkLch(hex);
+    if (L < BLACK_LIGHTNESS) return 'black';
+    if (C < GREY_CHROMA) return L >= WHITE_LIGHTNESS ? 'white' : 'black';
+    // The band whose start is the last one at or below h; below orange's start that's red
+    let family = HUE_BANDS[0].family;
+    for (const band of HUE_BANDS.slice(1)) {
+        if (h >= band.from) family = band.family;
+    }
+    return h >= HUE_BANDS[0].from ? HUE_BANDS[0].family : family;
+};

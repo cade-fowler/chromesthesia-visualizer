@@ -12,3 +12,7 @@ export const primaryKeyClass = `key-dark h-11 px-6 text-sm tracking-[0.12em] ${k
 
 /** A square key holding one icon */
 export const iconKeyClass = `key size-7 text-xs ${keyType}`;
+
+/** A small key that stays down while its option is on (decades, search modes) */
+export const toggleKeyClass = (on: boolean) =>
+    on ? smallKeyClass.replace(/^key /, 'key-down ') : smallKeyClass;

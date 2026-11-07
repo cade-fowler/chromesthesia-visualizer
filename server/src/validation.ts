@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
     AddColorRequest,
+    ColorFamily,
     LoginRequest,
     UpdateColorRequest,
     UpsertSongRequest,
@@ -85,24 +86,39 @@ export const updateColorSchema = z
         'Nothing to update',
     ) satisfies z.ZodType<UpdateColorRequest>;
 
+const COLOR_FAMILIES = [
+    'red',
+    'orange',
+    'yellow',
+    'green',
+    'blue',
+    'purple',
+    'white',
+    'black',
+] as const satisfies readonly ColorFamily[];
+
 // Only these query params are passed through to Mongo, and only as plain strings.
 // Passing req.query straight to find() would let ?field[$ne]=x inject operators.
-export const listQuerySchema = z.object({
-    title: z.string().optional(),
-    artist: z.string().optional(),
-    q: z.string().trim().max(200).optional(),
-    decade: z
-        .string()
-        .regex(/^\d{3}0$/, 'Expected a decade like 1990')
-        .transform(Number)
-        .optional(),
-    limit: z
-        .string()
-        .regex(/^\d+$/)
-        .transform(Number)
-        .pipe(z.number().int().min(1).max(200))
-        .optional(),
-});
+export const listQuerySchema = z
+    .object({
+        title: z.string().optional(),
+        artist: z.string().optional(),
+        q: z.string().trim().max(200).optional(),
+        decade: z
+            .string()
+            .regex(/^\d{3}0$/, 'Expected a decade like 1990')
+            .transform(Number)
+            .optional(),
+        color: hexColor.optional(),
+        family: z.enum(COLOR_FAMILIES).optional(),
+        limit: z
+            .string()
+            .regex(/^\d+$/)
+            .transform(Number)
+            .pipe(z.number().int().min(1).max(200))
+            .optional(),
+    })
+    .refine((query) => !(query.color && query.family), 'Search by color or family, not both');
 
 export const randomQuerySchema = z.object({
     not: z.string().optional(),

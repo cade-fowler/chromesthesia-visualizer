@@ -5,7 +5,7 @@ import { useOwner } from '../../auth/OwnerContext';
 import Nameplate from '../ui/Nameplate';
 import FeaturedSong from './FeaturedSong';
 import StatReadout from '../ui/StatReadout';
-import FindSong from './FindSong';
+import SongSearch from './SongSearch';
 import RecentSongs from './RecentSongs';
 
 /**
@@ -60,7 +60,7 @@ const Explore = () => {
                         ]}
                     />
                 </div>
-                <FindSong decades={stats.decades} />
+                <SongSearch decades={stats.decades} />
                 <RecentSongs />
             </>
         );
