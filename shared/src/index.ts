@@ -101,6 +101,21 @@ export interface SongSummary extends Song {
 }
 
 /**
+ * One item of GET /api/songs/:id/similar: a song whose colors are close to the given song's,
+ * closest first.
+ */
+export interface SimilarSong extends SongSummary {
+    similarity: {
+        /** songDistance() between the two songs: 0 is the same palette */
+        distance: number;
+        /** How many of the given song's colors have a close match in this one */
+        close: number;
+        /** How many colors the given song has */
+        total: number;
+    };
+}
+
+/**
  * The named color groups the home page's swatches search by. A color's family comes from its
  * OKLCH hue, or from its lightness when it's too grey to have one (white and black).
  */

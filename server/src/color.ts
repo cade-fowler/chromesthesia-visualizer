@@ -58,6 +58,28 @@ export const colorDistance = (x: HexColor, y: HexColor): number => {
 /** Colors within this distance of the searched color count as close (Hex and HSL search). */
 export const CLOSE_DISTANCE = 0.12;
 
+/** Songs within this songDistance() of a song are listed as similar to it. */
+export const SIMILAR_DISTANCE = 0.15;
+
+/** The mean distance from each of `from`'s colors to its closest color in `to`. */
+const meanClosest = (from: HexColor[], to: HexColor[]) =>
+    from.reduce((sum, x) => sum + Math.min(...to.map((y) => colorDistance(x, y))), 0) / from.length;
+
+/**
+ * How different two songs' colors look, for Similar songs. Each color is matched to its closest
+ * color in the other song, both ways, and the two averages are averaged: 0 for the same palette,
+ * and the same score whichever song comes first. Every entry counts, so a color logged for
+ * several parts weighs more. `close` counts how many of `a`'s colors have a match in `b` within
+ * CLOSE_DISTANCE. Both songs need at least one color.
+ */
+export const songDistance = (
+    a: HexColor[],
+    b: HexColor[],
+): { distance: number; close: number } => ({
+    distance: (meanClosest(a, b) + meanClosest(b, a)) / 2,
+    close: a.filter((x) => b.some((y) => colorDistance(x, y) <= CLOSE_DISTANCE)).length,
+});
+
 /**
  * Below this chroma a color is greyish, so it counts as white or black instead of a hue.
  * Pastels such as #f2c4ce (about 0.05) still count as their hue; creams such as #efeae0 don't.

@@ -5,6 +5,7 @@ import { getSong } from '../databaseAPI';
 import { formatMs } from '../../utils/time';
 import { albumPagePath } from '../../utils/paths';
 import Timeline from '../Timeline';
+import SimilarSongs from './SimilarSongs';
 import ColorSwatch from '../ColorSwatch';
 import AlbumArt from '../ui/AlbumArt';
 import NotFound from '../NotFound';
@@ -194,6 +195,8 @@ const SongPage = () => {
                         )}
                     </aside>
                 </div>
+
+                {colors.length > 0 && <SimilarSongs key={song.id} songId={song.id} />}
 
                 <div className="mt-2">
                     <Nameplate details={['Model CV-1', 'Song']} />

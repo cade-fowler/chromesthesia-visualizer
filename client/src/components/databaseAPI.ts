@@ -7,6 +7,7 @@ import type {
     ListSongsQuery,
     LoginRequest,
     NowPlaying,
+    SimilarSong,
     Song,
     SongSummary,
     SongWithColors,
@@ -74,6 +75,21 @@ export const getSong = async (id: string): Promise<SongWithColors | null> => {
     const response = await fetch(songPath(id));
     if (response.status === 404) return null;
     if (!response.ok) throw await errorFrom(response, 'Loading song');
+    return response.json();
+};
+
+/**
+ * Lists songs whose colors are close to this song's, closest first (up to 6 unless a limit is
+ * given). Empty when the song has no colors or nothing is close.
+ */
+export const getSimilarSongs = async (
+    id: string,
+    signal?: AbortSignal,
+    limit?: number,
+): Promise<SimilarSong[]> => {
+    const query = limit === undefined ? '' : `?limit=${limit}`;
+    const response = await fetch(`${songPath(id)}/similar${query}`, { signal });
+    if (!response.ok) throw await errorFrom(response, 'Loading similar songs');
     return response.json();
 };
 
