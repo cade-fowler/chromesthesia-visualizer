@@ -11,6 +11,9 @@ coverage/
 .env.*
 !.env.example
 
+# database dumps (mongodump --archive)
+*.archive
+
 # logs
 *.log
 
