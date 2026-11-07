@@ -155,6 +155,23 @@ docker compose exec -T mongo mongorestore --archive < colordatabase.archive
 docker compose restart app         # recreates the indexes on startup
 ```
 
+### Backups
+
+`scripts/backup.sh` saves a gzipped `mongodump` of the compose database to
+`/mnt/md0/backups/chromesthesia-visualizer` (set `BACKUP_DIR` to change it) and deletes backups
+older than 30 days (`KEEP_DAYS`). Run it nightly from the server user's crontab (`crontab -e`):
+
+```
+15 3 * * * /path/to/chromesthesia-visualizer/scripts/backup.sh >> /mnt/md0/backups/chromesthesia-visualizer/backup.log 2>&1
+```
+
+To restore one (this replaces the current data):
+
+```sh
+docker compose exec -T mongo mongorestore --drop --gzip --archive < /mnt/md0/backups/chromesthesia-visualizer/colordatabase-<date>.archive.gz
+docker compose restart app
+```
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
