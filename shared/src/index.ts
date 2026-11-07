@@ -178,6 +178,23 @@ export interface LibraryStats {
 }
 
 /**
+ * One item of GET /api/stats/hues: a single color entry with its song, placed for the home
+ * page's hue chart. Every entry is listed, so a hex logged for three parts appears three times.
+ */
+export interface HueChartColor {
+    /** The color entry's id */
+    id: string;
+    color: HexColor;
+    songId: string;
+    title: string;
+    artists: string[];
+    /** OKLCH hue in degrees (0–360), or null for a greyish color, which has no real hue */
+    hue: number | null;
+    /** OKLCH lightness, 0 (black) to 1 (white) */
+    lightness: number;
+}
+
+/**
  * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes, durationMs, album or
  * artistUrls keeps the song's current value, so saving from Spotify never wipes notes; send [] to clear them.
  */

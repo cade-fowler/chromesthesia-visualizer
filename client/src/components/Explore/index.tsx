@@ -7,6 +7,7 @@ import FeaturedSong from './FeaturedSong';
 import StatReadout from '../ui/StatReadout';
 import SongSearch from './SongSearch';
 import RecentSongs from './RecentSongs';
+import HueChart from './HueChart';
 
 /**
  * The public home page: a featured song and the library's stats, search, and the songs most
@@ -60,6 +61,7 @@ const Explore = () => {
                         ]}
                     />
                 </div>
+                <HueChart />
                 <SongSearch decades={stats.decades} />
                 <RecentSongs />
             </>
