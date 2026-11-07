@@ -1,4 +1,7 @@
 import 'dotenv/config';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { connectDb, songs } from './db.js';
 
@@ -17,6 +20,15 @@ if (!passwordHash?.startsWith('scrypt:') || !sessionSecret || sessionSecret.leng
     );
 }
 
+// In production the server also serves the built client, so the site is one origin
+const production = process.env.NODE_ENV === 'production';
+const clientDir =
+    process.env.CLIENT_DIR ||
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
+if (production && !existsSync(path.join(clientDir, 'index.html'))) {
+    throw new Error(`No built client at ${clientDir}. Run: npm run build`);
+}
+
 await connectDb(connectionString, process.env.DB_NAME || 'colordatabase');
 
 // Songs from before the colors collection still embed their colors, which the API ignores
@@ -27,11 +39,14 @@ if (await songs().countDocuments({ colors: { $exists: true } }, { limit: 1 })) {
     );
 }
 
-createApp({
-    passwordHash,
-    sessionSecret,
-    secureCookies: process.env.NODE_ENV === 'production',
-    trustCloudflare: process.env.TRUST_CLOUDFLARE === 'true',
-}).listen(PORT, () => {
+createApp(
+    {
+        passwordHash,
+        sessionSecret,
+        secureCookies: production,
+        trustCloudflare: process.env.TRUST_CLOUDFLARE === 'true',
+    },
+    { clientDir: production ? clientDir : undefined },
+).listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
 });
