@@ -43,6 +43,8 @@ export const upsertSongSchema = z.object({
     notes: notes.optional(),
     album: album.optional(),
     artistUrls: z.array(z.url()).optional(),
+    trackNumber: z.number().int().positive().optional(),
+    discNumber: z.number().int().positive().optional(),
 }) satisfies z.ZodType<UpsertSongRequest>;
 
 const label = z.string().trim().min(1).max(50);

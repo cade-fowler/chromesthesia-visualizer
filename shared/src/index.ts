@@ -22,6 +22,10 @@ export interface SongDetails {
     album?: Album;
     /** Each artist's Spotify page, in the same order as the artists */
     artistUrls?: string[];
+    /** The song's place on its album (1-based), within its disc */
+    trackNumber?: number;
+    /** Which disc of the album the song is on (1-based) */
+    discNumber?: number;
 }
 
 /** The song Spotify reports as currently playing, shaped for the UI. */
@@ -101,6 +105,19 @@ export interface ListSongsQuery {
     decade?: number;
     /** How many songs to return, 1–200 (default 50) */
     limit?: number;
+}
+
+/**
+ * Response of GET /api/albums/:id: an album and the songs from it that have been logged, in
+ * track order (songs saved before track numbers were stored come last, by title).
+ */
+export interface AlbumWithSongs {
+    album: Album;
+    /** The album art, from one of its songs */
+    albumImageUrl?: string;
+    /** Every artist on the logged songs, in order of first appearance */
+    artists: string[];
+    songs: SongWithColors[];
 }
 
 /** Response of GET /api/stats: counts across everything logged. */

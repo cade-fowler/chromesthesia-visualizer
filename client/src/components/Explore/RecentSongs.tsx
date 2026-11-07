@@ -4,7 +4,7 @@ import type { SongSummary } from '@chromesthesia/shared';
 import { listSongs } from '../databaseAPI';
 import SectionLabel from '../ui/SectionLabel';
 import ColorStrip from '../ui/ColorStrip';
-import { songPagePath } from './SongCard';
+import { songPagePath } from '../../utils/paths';
 
 const COUNT = 4;
 

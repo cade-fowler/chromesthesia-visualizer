@@ -33,9 +33,18 @@ function getDb(): Db {
 export const songs = () => getDb().collection<Song>('songs');
 export const colors = () => getDb().collection<ColorDoc>('colors');
 
+/**
+ * Sort for a song's colors in song order: by where the part starts, then by when it was saved.
+ * Whole-song colors have no startMs, which Mongo sorts before any number, so they come first.
+ * Keep in step with compareColorEntries() in the client.
+ */
+export const songOrder = { startMs: 1, createdAt: 1, _id: 1 } as const;
+
 /** Creates the indexes the app relies on. A no-op when they already exist. */
 export async function ensureIndexes(target: Db): Promise<void> {
     await target.collection('songs').createIndex({ id: 1 }, { unique: true });
+    // Serves GET /api/albums/:id
+    await target.collection('songs').createIndex({ 'album.id': 1 });
     // Serves colorsFor()'s filter and sort. Replaces { songId: 1, createdAt: 1 }.
     await target.collection('colors').createIndex({ songId: 1, startMs: 1, createdAt: 1 });
     await target

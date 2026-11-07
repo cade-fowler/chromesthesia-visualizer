@@ -10,7 +10,7 @@ import type {
     SongWithColors,
 } from '@chromesthesia/shared';
 import { requireOwner } from '../auth.js';
-import { colors, songs, toColorEntry } from '../db.js';
+import { colors, songOrder, songs, toColorEntry } from '../db.js';
 import {
     addColorSchema,
     listQuerySchema,
@@ -28,14 +28,9 @@ const withoutMongoId = { projection: { _id: 0 } } as const;
 
 const songExists = async (id: string) => (await songs().countDocuments({ id }, { limit: 1 })) > 0;
 
-// Song order: by where the part starts, then by when it was saved. Whole-song colors have no
-// startMs, which Mongo sorts before any number, so they come first. Keep in step with
-// compareColorEntries() in the client.
+// A song's colors in song order (see songOrder)
 const colorsFor = async (songId: string): Promise<ColorEntry[]> => {
-    const docs = await colors()
-        .find({ songId })
-        .sort({ startMs: 1, createdAt: 1, _id: 1 })
-        .toArray();
+    const docs = await colors().find({ songId }).sort(songOrder).toArray();
     return docs.map(toColorEntry);
 };
 
@@ -69,7 +64,7 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
                     foreignField: 'songId',
                     // Song order, as in colorsFor()
                     pipeline: [
-                        { $sort: { startMs: 1, createdAt: 1, _id: 1 } },
+                        { $sort: songOrder },
                         { $project: { _id: 0, color: 1, createdAt: 1 } },
                     ],
                     as: 'colorDocs',
