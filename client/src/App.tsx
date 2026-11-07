@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import ColorPicker from './components/ColorPicker';
 import Explore from './components/Explore';
 import SongPage from './components/SongPage';
+import AlbumPage from './components/AlbumPage';
 import NotFound from './components/NotFound';
 import Login from './components/Login';
 import RequireOwner from './auth/RequireOwner';
@@ -35,6 +36,7 @@ function App() {
                 />
                 <Route path="login" element={<Login />} />
                 <Route path="songs/:songId" element={<SongPage />} />
+                <Route path="albums/:albumId" element={<AlbumPage />} />
                 <Route path="*" element={<NotFound />} />
             </Route>
         </Routes>

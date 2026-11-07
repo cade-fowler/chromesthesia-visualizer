@@ -4,7 +4,7 @@ import { getStats } from '../databaseAPI';
 import { useOwner } from '../../auth/OwnerContext';
 import Nameplate from '../ui/Nameplate';
 import FeaturedSong from './FeaturedSong';
-import LibraryStats from './LibraryStats';
+import StatReadout from '../ui/StatReadout';
 import FindSong from './FindSong';
 import RecentSongs from './RecentSongs';
 
@@ -51,7 +51,14 @@ const Explore = () => {
             <>
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
                     <FeaturedSong />
-                    <LibraryStats stats={stats} />
+                    <StatReadout
+                        readings={[
+                            ['Songs', stats.songs],
+                            ['Colors', stats.colors],
+                            ['Artists', stats.artists],
+                            ['Song parts', stats.parts],
+                        ]}
+                    />
                 </div>
                 <FindSong decades={stats.decades} />
                 <RecentSongs />

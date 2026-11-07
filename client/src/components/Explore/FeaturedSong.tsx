@@ -5,17 +5,13 @@ import { getRandomSong } from '../databaseAPI';
 import AlbumArt from '../ui/AlbumArt';
 import ColorStrip from '../ui/ColorStrip';
 import { smallKeyClass } from '../ui/buttons';
-import { songPagePath } from './SongCard';
+import { albumPagePath, songPagePath } from '../../utils/paths';
 
 type Load =
     | { status: 'loading' }
     | { status: 'none' }
     | { status: 'error'; message: string }
     | { status: 'loaded'; song: SongWithColors };
-
-/** "Album, 2016" from a song's album details, or null without them. */
-const albumLine = ({ album }: SongWithColors) =>
-    album ? `${album.name}, ${album.releaseDate.slice(0, 4)}` : null;
 
 /** A random song with colors, picked fresh on each visit, with a key to shuffle to another. */
 const FeaturedSong = () => {
@@ -76,9 +72,19 @@ const FeaturedSong = () => {
                             {load.song.title}
                         </h2>
                         <p className="text-base text-silk">
-                            {[load.song.artists.join(', '), albumLine(load.song)]
-                                .filter(Boolean)
-                                .join(' · ')}
+                            {load.song.artists.join(', ')}
+                            {load.song.album && (
+                                <>
+                                    {' · '}
+                                    <Link
+                                        className="hover:text-ink hover:underline"
+                                        to={albumPagePath(load.song.album.id)}
+                                    >
+                                        {load.song.album.name}
+                                    </Link>
+                                    {`, ${load.song.album.releaseDate.slice(0, 4)}`}
+                                </>
+                            )}
                         </p>
                         <ColorStrip
                             colors={load.song.colors.map((entry) => entry.color)}

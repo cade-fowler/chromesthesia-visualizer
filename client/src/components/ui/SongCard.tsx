@@ -1,9 +1,8 @@
 import { Link } from 'react-router';
 import type { SongSummary } from '@chromesthesia/shared';
-import AlbumArt from '../ui/AlbumArt';
-import ColorStrip from '../ui/ColorStrip';
-
-export const songPagePath = (id: string) => `/songs/${encodeURIComponent(id)}`;
+import { songPagePath } from '../../utils/paths';
+import AlbumArt from './AlbumArt';
+import ColorStrip from './ColorStrip';
 
 /** A song in a list: art, title, artists and a strip of its colors, opening its song page. */
 const SongCard = ({ song }: { song: SongSummary }) => (

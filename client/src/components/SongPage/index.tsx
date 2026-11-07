@@ -3,12 +3,14 @@ import { Link, useParams } from 'react-router';
 import type { SongWithColors } from '@chromesthesia/shared';
 import { getSong } from '../databaseAPI';
 import { formatMs } from '../../utils/time';
+import { albumPagePath } from '../../utils/paths';
 import Timeline from '../Timeline';
 import ColorSwatch from '../ColorSwatch';
 import AlbumArt from '../ui/AlbumArt';
 import NotFound from '../NotFound';
 import SectionLabel from '../ui/SectionLabel';
 import Nameplate from '../ui/Nameplate';
+import Tag from '../ui/Tag';
 import { keyClass } from '../ui/buttons';
 import { useOwner } from '../../auth/OwnerContext';
 
@@ -17,12 +19,6 @@ type Load =
     | { status: 'missing' }
     | { status: 'error'; message: string }
     | { status: 'loaded'; song: SongWithColors };
-
-const Tag = ({ children }: { children: string }) => (
-    <span className="rounded-[3px] border border-silk/60 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.06em] text-silk uppercase">
-        {children}
-    </span>
-);
 
 /** The public page for one song: its details, color timeline, colors and notes. */
 const SongPage = () => {
@@ -102,14 +98,12 @@ const SongPage = () => {
                             {song.album && (
                                 <>
                                     {' · '}
-                                    <a
+                                    <Link
                                         className="hover:text-ink hover:underline"
-                                        href={song.album.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        to={albumPagePath(song.album.id)}
                                     >
                                         {song.album.name}
-                                    </a>
+                                    </Link>
                                 </>
                             )}
                         </span>
