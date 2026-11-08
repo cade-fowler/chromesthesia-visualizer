@@ -127,9 +127,27 @@ export interface ColorMatch {
     color: HexColor;
     /**
      * OKLab distance to the searched color (or to the family's swatch color): 0 is the same
-     * color, about 1 is black to white
+     * color, about 1 is black to white. For a range search it's how far the color is from the
+     * middle of the range instead: 0 at the middle, 1 at the edge.
      */
     distance: number;
+    /** Range searches only: how many of the song's colors are in the range */
+    inRange?: number;
+}
+
+/**
+ * An OKLCH hue range in whole degrees (0–359), from `from` round to `to`. When `from` is
+ * greater than `to` it wraps past 360, so { from: 330, to: 30 } covers the reds.
+ */
+export interface HueRange {
+    from: number;
+    to: number;
+}
+
+/** An OKLCH lightness range in percent (0–100), `from` at most `to`. */
+export interface LightRange {
+    from: number;
+    to: number;
 }
 
 /** Query of GET /api/songs. Every filter is optional; they combine with AND. */
@@ -148,7 +166,18 @@ export interface ListSongsQuery {
      * swatch. Can't be combined with color.
      */
     family?: ColorFamily;
-    /** How many songs to return, 1–200 (default 50) */
+    /**
+     * Songs with colors in this hue range (sent as "330-30"). Greyish colors have no hue, so
+     * they never match. Combines with light; can't be combined with color or family.
+     */
+    hue?: HueRange;
+    /**
+     * Songs with colors in this lightness range (sent as "30-70"). Combines with hue; can't be
+     * combined with color or family. Range searches rank songs by the share of their colors in
+     * range, then by how close the best one is to the middle of the range.
+     */
+    light?: LightRange;
+    /** How many songs to return, 1–1000 (default 50) */
     limit?: number;
 }
 

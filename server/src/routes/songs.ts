@@ -20,7 +20,10 @@ import {
     SIMILAR_DISTANCE,
     colorDistance,
     familyOf,
+    inColorRange,
+    rangeCenterDistance,
     songDistance,
+    type ColorRange,
 } from '../color.js';
 import { colors, songOrder, songs, toColorEntry } from '../db.js';
 import {
@@ -62,6 +65,20 @@ const closestColor = (
     return best;
 };
 
+// For a range search: how many of the song's colors are in the range, and the one closest to
+// the range's middle (undefined when none are)
+const rangeMatch = (hexes: HexColor[], range: ColorRange): ColorMatch | undefined => {
+    let best: ColorMatch | undefined;
+    let inRange = 0;
+    for (const hex of hexes) {
+        if (!inColorRange(hex, range)) continue;
+        inRange++;
+        const distance = rangeCenterDistance(hex, range);
+        if (!best || distance < best.distance) best = { color: hex, distance };
+    }
+    return best && { ...best, inRange };
+};
+
 // Aggregation stages that give each song its colors' hex values in song order (as in
 // colorsFor()) and addedAt, the time of its first color (null when it has none)
 const summaryStages: Document[] = [
@@ -93,11 +110,12 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
 // List songs, newest first, each with its colors' hex values. Filters: ?title= and ?artist=
 // (exact), ?q= (text in the title, an artist or the album name), ?decade=, and a search by
 // color: ?color= (close to this hex) or ?family= (any color in that family), which rank the
-// closest match first. ?limit= caps the results.
+// closest match first, or a range search: ?hue= and/or ?light= (colors in those ranges), which
+// ranks songs with the biggest share of their colors in range first. ?limit= caps the results.
 router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid query' });
-    const { title, artist, q, decade, color, family, limit = 50 } = parsed.data;
+    const { title, artist, q, decade, color, family, hue, light, limit = 50 } = parsed.data;
 
     const filter: Document = {};
     if (title) filter.title = title;
@@ -111,7 +129,8 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
 
     // A search by color scores every song in Node (Mongo can't do the color math), so the limit
     // applies after ranking instead of in the pipeline
-    const byColor = color !== undefined || family !== undefined;
+    const byRange = hue !== undefined || light !== undefined;
+    const byColor = color !== undefined || family !== undefined || byRange;
 
     const docs = await songs()
         .aggregate<SummaryDoc>([
@@ -126,6 +145,18 @@ router.get<NoParams, SongSummary[] | ApiError>('/', async (req, res) => {
 
     const summaries = docs.map(toSummary);
     if (!byColor) return res.json(summaries);
+
+    if (byRange) {
+        const share = (song: SongSummary & { match: ColorMatch }) =>
+            song.match.inRange! / song.colors.length;
+        const ranked = summaries
+            .map((song) => ({ ...song, match: rangeMatch(song.colors, { hue, light }) }))
+            .filter((song): song is SongSummary & { match: ColorMatch } => !!song.match)
+            // Stable sort, so songs that tie stay newest first
+            .sort((a, b) => share(b) - share(a) || a.match.distance - b.match.distance)
+            .slice(0, limit);
+        return res.json(ranked);
+    }
 
     const target = color ?? FAMILY_COLORS[family!];
     const ranked = summaries

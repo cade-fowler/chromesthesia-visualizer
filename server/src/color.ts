@@ -1,4 +1,4 @@
-import type { ColorFamily, HexColor } from '@chromesthesia/shared';
+import type { ColorFamily, HexColor, HueRange, LightRange } from '@chromesthesia/shared';
 
 /**
  * Color math for search by color. Colors are compared in OKLab, a perceptual color space:
@@ -154,4 +154,53 @@ export const familyOf = (hex: HexColor): ColorFamily => {
         if (h >= band.from) family = band.family;
     }
     return h >= HUE_BANDS[0].from ? HUE_BANDS[0].family : family;
+};
+
+/** A range search: a hue range, a lightness range, or both. */
+export interface ColorRange {
+    hue?: HueRange;
+    light?: LightRange;
+}
+
+/** How far hue `h` is past `from`, going up round the wheel: 0 to just under 360. */
+const degreesPast = (h: number, from: number) => (((h - from) % 360) + 360) % 360;
+
+/** How many degrees a hue range spans; one that wraps past 360 is measured the short way round. */
+const hueSpan = ({ from, to }: HueRange) => degreesPast(to, from);
+
+/** Whether hue `h` (any degrees) is in the range, which wraps past 360 when `from > to`. */
+export const inHueRange = (h: number, range: HueRange): boolean =>
+    // Ranges are whole degrees, so a hue up to (not including) the next degree still counts
+    degreesPast(h, range.from) < hueSpan(range) + 1;
+
+/**
+ * Whether a color is in the range. With a hue range, greyish colors (chroma under GREY_CHROMA)
+ * never are: their hue is meaningless. Lightness is OKLCH L in percent.
+ */
+export const inColorRange = (hex: HexColor, { hue, light }: ColorRange): boolean => {
+    const { L, C, h } = hexToOkLch(hex);
+    // A little leeway, so white (L ≈ 1, give or take rounding) is in 0–100
+    if (light && (L * 100 < light.from - 1e-6 || L * 100 > light.to + 1e-6)) return false;
+    if (hue && (C < GREY_CHROMA || !inHueRange(h, hue))) return false;
+    return true;
+};
+
+/**
+ * How far a color in the range is from the range's middle: 0 at the middle, about 1 at an edge.
+ * The hue and lightness parts are each measured against half the range's width, then combined
+ * (and scaled back to 0–1 when both are given).
+ */
+export const rangeCenterDistance = (hex: HexColor, { hue, light }: ColorRange): number => {
+    const { L, h } = hexToOkLch(hex);
+    const parts: number[] = [];
+    if (hue) {
+        const half = (hueSpan(hue) + 1) / 2;
+        parts.push(Math.abs(degreesPast(h, hue.from) - half) / half);
+    }
+    if (light) {
+        const half = Math.max((light.to - light.from) / 2, 0.5);
+        parts.push(Math.abs(L * 100 - (light.from + light.to) / 2) / half);
+    }
+    if (parts.length === 0) return 0;
+    return Math.min(1, Math.hypot(...parts) / Math.sqrt(parts.length));
 };

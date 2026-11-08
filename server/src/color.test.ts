@@ -5,6 +5,9 @@ import {
     colorDistance,
     familyOf,
     hexToOkLch,
+    inColorRange,
+    inHueRange,
+    rangeCenterDistance,
     songDistance,
 } from './color.js';
 
@@ -123,5 +126,59 @@ describe('songDistance', () => {
 
     it("counts a's colors with a close match in b", () => {
         expect(songDistance(['#ff0000', '#fe0101', '#0000ff'], ['#ff0000']).close).toBe(2);
+    });
+});
+
+describe('inHueRange', () => {
+    it('includes both ends of the range', () => {
+        expect(inHueRange(200, { from: 200, to: 260 })).toBe(true);
+        expect(inHueRange(260.5, { from: 200, to: 260 })).toBe(true);
+        expect(inHueRange(199.9, { from: 200, to: 260 })).toBe(false);
+        expect(inHueRange(261, { from: 200, to: 260 })).toBe(false);
+    });
+
+    it('wraps past 360 when from is greater than to', () => {
+        const reds = { from: 330, to: 30 };
+        expect(inHueRange(350, reds)).toBe(true);
+        expect(inHueRange(10, reds)).toBe(true);
+        expect(inHueRange(180, reds)).toBe(false);
+    });
+
+    it('covers the whole wheel from 0 to 359', () => {
+        expect(inHueRange(359.7, { from: 0, to: 359 })).toBe(true);
+    });
+});
+
+describe('inColorRange', () => {
+    it('checks hue and lightness together', () => {
+        // #2f6fd6 is about hue 260, lightness 56%
+        expect(inColorRange('#2f6fd6', { hue: { from: 240, to: 280 } })).toBe(true);
+        expect(inColorRange('#2f6fd6', { light: { from: 50, to: 60 } })).toBe(true);
+        expect(
+            inColorRange('#2f6fd6', { hue: { from: 240, to: 280 }, light: { from: 70, to: 90 } }),
+        ).toBe(false);
+    });
+
+    it('leaves greys out of hue ranges but not lightness ranges', () => {
+        expect(inColorRange('#808080', { hue: { from: 0, to: 359 } })).toBe(false);
+        expect(inColorRange('#808080', { light: { from: 55, to: 65 } })).toBe(true);
+    });
+
+    it('counts black and white as 0% and 100% light', () => {
+        expect(inColorRange('#000000', { light: { from: 0, to: 0 } })).toBe(true);
+        expect(inColorRange('#ffffff', { light: { from: 100, to: 100 } })).toBe(true);
+    });
+});
+
+describe('rangeCenterDistance', () => {
+    it('is 0 in the middle and about 1 at an edge', () => {
+        // #808080 is 60% light
+        expect(rangeCenterDistance('#808080', { light: { from: 50, to: 70 } })).toBeCloseTo(0, 1);
+        expect(rangeCenterDistance('#808080', { light: { from: 60, to: 80 } })).toBeCloseTo(1, 1);
+    });
+
+    it('measures a wrapped hue range from its middle', () => {
+        // #f2c4ce is about hue 4, close to the middle of 330–40 (5)
+        expect(rangeCenterDistance('#f2c4ce', { hue: { from: 330, to: 40 } })).toBeLessThan(0.1);
     });
 });
