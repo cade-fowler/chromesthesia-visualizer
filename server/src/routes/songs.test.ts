@@ -463,6 +463,70 @@ describe('GET /api/songs', () => {
             expect(ids(res.body)).toEqual(['red']);
         });
 
+        it('finds songs with a color in ?hue=, with how many of their colors are in it', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ hue: '200-280' });
+
+            expect(res.status).toBe(200);
+            expect(ids(res.body)).toEqual(['red']);
+            expect(res.body[0].match).toMatchObject({ color: '#2f6fd6', inRange: 1 });
+        });
+
+        it('wraps a hue range past 360 and ranks by the share of colors in range', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ hue: '330-40' });
+
+            // Both are red-ish, but all of the pink song's colors are, and only half the red's
+            expect(ids(res.body)).toEqual(['pink', 'red']);
+            expect(res.body[1].match).toMatchObject({ color: '#d03020', inRange: 1 });
+        });
+
+        it('leaves greys out of a hue range but not out of a lightness range', async () => {
+            await seedColors();
+            await putSong({ ...song, title: 'Grey' }, 'grey');
+            await addColor({ color: '#808080' }, 'grey');
+
+            const byHue = await api.get('/api/songs').query({ hue: '0-359' });
+            expect(ids(byHue.body)).not.toContain('grey');
+
+            // All of these are wholly in range; the grey (L 60) sits right in the middle
+            const byLight = await api.get('/api/songs').query({ light: '55-65' });
+            expect(ids(byLight.body)).toEqual(['grey', 'green', 'red']);
+            expect(byLight.body[0].match).toMatchObject({ color: '#808080', inRange: 1 });
+            expect(byLight.body[0].match.distance).toBeCloseTo(0, 2);
+        });
+
+        it('needs one color in both ranges when given ?hue= and ?light=', async () => {
+            await seedColors();
+            await putSong({ ...song, title: 'Sky' }, 'sky');
+            await addColor({ color: '#93c5fd' }, 'sky');
+            const res = await api.get('/api/songs').query({ hue: '200-280', light: '70-90' });
+
+            // The red song's blue part is in the hue range but too dark
+            expect(ids(res.body)).toEqual(['sky']);
+        });
+
+        it('applies the limit after ranking a range search', async () => {
+            await seedColors();
+            const res = await api.get('/api/songs').query({ hue: '330-40', limit: '1' });
+
+            expect(ids(res.body)).toEqual(['pink']);
+        });
+
+        it('rejects bad ranges and mixing range, color and family searches', async () => {
+            for (const query of [
+                { hue: '200' },
+                { hue: '200-360' },
+                { hue: '-10-20' },
+                { light: '0-101' },
+                { light: '70-30' },
+                { hue: '0-90', color: '#ff0000' },
+                { light: '0-50', family: 'red' },
+            ]) {
+                expect((await api.get('/api/songs').query(query)).status).toBe(400);
+            }
+        });
+
         it('leaves match out of other lists', async () => {
             await seedColors();
             const res = await api.get('/api/songs');

@@ -15,6 +15,7 @@ import type {
     UpdateColorRequest,
     UpsertSongRequest,
 } from '@chromesthesia/shared';
+import { formatRange } from '../utils/colorRange';
 
 const songPath = (id: string) => `/api/songs/${encodeURIComponent(id)}`;
 
@@ -45,6 +46,8 @@ export const listSongs = async (
     if (query.decade !== undefined) params.set('decade', String(query.decade));
     if (query.color) params.set('color', query.color);
     if (query.family) params.set('family', query.family);
+    if (query.hue) params.set('hue', formatRange(query.hue));
+    if (query.light) params.set('light', formatRange(query.light));
     if (query.limit !== undefined) params.set('limit', String(query.limit));
     const search = params.toString();
     const response = await fetch(search ? `/api/songs?${search}` : '/api/songs', { signal });

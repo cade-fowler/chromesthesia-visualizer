@@ -204,6 +204,13 @@ describe('listSongs', () => {
         expect(fetchMock.mock.calls[1][0]).toBe('/api/songs?q=x&family=red');
     });
 
+    it('sends a range search', async () => {
+        fetchMock.mockResolvedValueOnce(respond(200, []));
+
+        await listSongs({ hue: { from: 330, to: 30 }, light: { from: 20, to: 80 } });
+        expect(fetchMock.mock.calls[0][0]).toBe('/api/songs?hue=330-30&light=20-80');
+    });
+
     it('leaves out an empty search', async () => {
         fetchMock.mockResolvedValueOnce(respond(200, []));
 

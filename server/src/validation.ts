@@ -97,6 +97,17 @@ const COLOR_FAMILIES = [
     'black',
 ] as const satisfies readonly ColorFamily[];
 
+// A "from-to" range of whole numbers from 0 to max, such as "200-260"
+const range = (max: number, message: string) =>
+    z
+        .string()
+        .regex(/^\d{1,3}-\d{1,3}$/, message)
+        .transform((text) => {
+            const [from, to] = text.split('-').map(Number);
+            return { from, to };
+        })
+        .refine((r) => r.from <= max && r.to <= max, message);
+
 // Only these query params are passed through to Mongo, and only as plain strings.
 // Passing req.query straight to find() would let ?field[$ne]=x inject operators.
 export const listQuerySchema = z
@@ -111,6 +122,10 @@ export const listQuerySchema = z
             .optional(),
         color: hexColor.optional(),
         family: z.enum(COLOR_FAMILIES).optional(),
+        hue: range(359, 'Expected a hue range like 200-260').optional(),
+        light: range(100, 'Expected a lightness range like 30-70')
+            .refine((r) => r.from <= r.to, 'Lightness range must go from dark to light')
+            .optional(),
         limit: z
             .string()
             .regex(/^\d+$/)
@@ -118,7 +133,12 @@ export const listQuerySchema = z
             .pipe(z.number().int().min(1).max(200))
             .optional(),
     })
-    .refine((query) => !(query.color && query.family), 'Search by color or family, not both');
+    .refine(
+        (query) =>
+            [query.color, query.family, query.hue ?? query.light].filter((x) => x !== undefined)
+                .length <= 1,
+        'Search by color, family or range, one at a time',
+    );
 
 export const similarQuerySchema = z.object({
     limit: z

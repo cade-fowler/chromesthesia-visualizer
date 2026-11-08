@@ -1,25 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import type { ColorFamily, HexColor, SongSummary } from '@chromesthesia/shared';
+import type {
+    ColorFamily,
+    HexColor,
+    HueRange,
+    LightRange,
+    SongSummary,
+} from '@chromesthesia/shared';
 import { listSongs } from '../databaseAPI';
 import SectionLabel from '../ui/SectionLabel';
 import SongCard from '../ui/SongCard';
 import { albumMatches } from '../../utils/albumMatches';
 import { parseHex } from '../../utils/color';
 import { isColorFamily } from '../../utils/colorFamilies';
+import { formatRange, parseHueRange, parseLightRange } from '../../utils/colorRange';
 import AlbumResult from './AlbumResult';
 import FindSong from './FindSong';
 import FindByColor from './FindByColor';
 
 const DEBOUNCE_MS = 250;
 
-/** The search as it's kept in the page's URL, e.g. "?q=frank&decade=2010&family=blue" */
+/**
+ * The search as it's kept in the page's URL, e.g. "?q=frank&decade=2010&family=blue" or
+ * "?hue=200-260&light=30-70"
+ */
 interface Search {
     q: string;
     decade?: number;
     /** Kept in the URL without its "#" */
     color?: HexColor;
     family?: ColorFamily;
+    hue?: HueRange;
+    light?: LightRange;
 }
 
 const readSearch = (params: URLSearchParams): Search => {
@@ -30,6 +42,8 @@ const readSearch = (params: URLSearchParams): Search => {
         decade: /^\d{3}0$/.test(decadeText) ? Number(decadeText) : undefined,
         color: parseHex(params.get('color') ?? '') ?? undefined,
         family: isColorFamily(familyText) ? familyText : undefined,
+        hue: parseHueRange(params.get('hue') ?? ''),
+        light: parseLightRange(params.get('light') ?? ''),
     };
 };
 
@@ -43,7 +57,7 @@ type Changes = { [K in keyof Search]?: Search[K] | undefined };
 const SongSearch = ({ decades }: { decades: number[] }) => {
     const [params, setParams] = useSearchParams();
     const search = readSearch(params);
-    const { q, decade, color, family } = search;
+    const { q, decade, color, family, hue, light } = search;
     const [text, setText] = useState(q);
     // Kept with the search they answer, so albums are matched against the right text
     const [found, setFound] = useState<{ key: string; q: string; songs: SongSummary[] } | null>(
@@ -58,11 +72,18 @@ const SongSearch = ({ decades }: { decades: number[] }) => {
                 const next = new URLSearchParams(prev);
                 for (const [name, value] of Object.entries(changes)) {
                     if (value === undefined || value === '') next.delete(name);
+                    else if (typeof value === 'object') next.set(name, formatRange(value));
                     else next.set(name, name === 'color' ? String(value).slice(1) : String(value));
                 }
                 // One color search at a time
-                if (changes.color) next.delete('family');
-                if (changes.family) next.delete('color');
+                const others = (keep: string[]) => {
+                    for (const name of ['color', 'family', 'hue', 'light']) {
+                        if (!keep.includes(name)) next.delete(name);
+                    }
+                };
+                if (changes.color) others(['color']);
+                if (changes.family) others(['family']);
+                if (changes.hue || changes.light) others(['hue', 'light']);
                 return next;
             },
             { replace },
@@ -85,14 +106,15 @@ const SongSearch = ({ decades }: { decades: number[] }) => {
         if (text.trim() !== q) setText(q);
     }
 
-    const filtering =
-        q !== '' || decade !== undefined || color !== undefined || family !== undefined;
+    const byColor =
+        color !== undefined || family !== undefined || hue !== undefined || light !== undefined;
+    const filtering = q !== '' || decade !== undefined || byColor;
     const key = JSON.stringify(search);
 
     useEffect(() => {
         if (!filtering) return;
         const controller = new AbortController();
-        listSongs({ q, decade, color, family, limit: 200 }, controller.signal)
+        listSongs({ q, decade, color, family, hue, light, limit: 200 }, controller.signal)
             .then((songs) => {
                 setFound({ key, q, songs });
                 setError(null);
@@ -101,14 +123,13 @@ const SongSearch = ({ decades }: { decades: number[] }) => {
                 if (!controller.signal.aborted) setError(err.message);
             });
         return () => controller.abort();
-        // key covers q, decade, color and family
+        // key covers the whole search
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filtering, key]);
 
     const results = found?.songs ?? null;
     const current = found?.key === key;
     const albums = found ? albumMatches(found.songs, found.q) : [];
-    const byColor = color !== undefined || family !== undefined;
 
     return (
         <section className="flex flex-col gap-4">
@@ -125,6 +146,19 @@ const SongSearch = ({ decades }: { decades: number[] }) => {
                     family={family}
                     onColor={(c, replace) => update({ color: c }, replace)}
                     onFamily={(f, replace) => update({ family: f }, replace)}
+                    hue={hue}
+                    light={light}
+                    onRange={(range, replace) =>
+                        update({ hue: range.hue, light: range.light }, replace)
+                    }
+                    onClear={() =>
+                        update({
+                            color: undefined,
+                            family: undefined,
+                            hue: undefined,
+                            light: undefined,
+                        })
+                    }
                     count={byColor && current && results ? results.length : undefined}
                 />
             </div>
