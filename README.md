@@ -18,6 +18,7 @@ A web app for recording the colors I perceive in music (chromesthesia) and analy
   - Search by song, artist, album or decade, with each song's colors
   - Search by color: color families, an exact color (Hex or HSL), or a range of hues and
     lightness
+  - A Songs page listing every song, with all the filters and sorting
   - Song and album pages, similar songs, and a hue chart of every color
 - **Planned:**
   - Search and filter by genre

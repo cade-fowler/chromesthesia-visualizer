@@ -5,6 +5,7 @@ import { listSongs } from '../databaseAPI';
 import SectionLabel from '../ui/SectionLabel';
 import ColorStrip from '../ui/ColorStrip';
 import { songPagePath } from '../../utils/paths';
+import { smallKeyClass } from '../ui/buttons';
 
 const COUNT = 4;
 
@@ -31,7 +32,15 @@ const RecentSongs = () => {
 
     return (
         <section className="flex flex-col gap-4 panel screws p-6">
-            <SectionLabel>Recently added</SectionLabel>
+            <SectionLabel
+                aside={
+                    <Link to="/songs" className={smallKeyClass}>
+                        All songs
+                    </Link>
+                }
+            >
+                Recently added
+            </SectionLabel>
             {error ? (
                 <p className="text-sm font-bold text-danger" role="alert">
                     {error}

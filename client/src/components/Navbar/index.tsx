@@ -1,6 +1,11 @@
 import { NavLink, Link } from 'react-router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCompass, faEyeDropper, type IconDefinition } from '@fortawesome/free-solid-svg-icons';
+import {
+    faCompass,
+    faEyeDropper,
+    faTableCellsLarge,
+    type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
 import { useOwner } from '../../auth/OwnerContext';
 
 interface Page {
@@ -13,6 +18,7 @@ interface Page {
 
 const PAGES: Page[] = [
     { to: '/', icon: faCompass, label: 'Explore' },
+    { to: '/songs', icon: faTableCellsLarge, label: 'Songs' },
     { to: '/studio', icon: faEyeDropper, label: 'Studio', ownerOnly: true },
 ];
 

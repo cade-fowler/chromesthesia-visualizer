@@ -177,7 +177,7 @@ export interface ListSongsQuery {
      * range, then by how close the best one is to the middle of the range.
      */
     light?: LightRange;
-    /** How many songs to return, 1–200 (default 50) */
+    /** How many songs to return, 1–1000 (default 50) */
     limit?: number;
 }
 

@@ -130,7 +130,7 @@ export const listQuerySchema = z
             .string()
             .regex(/^\d+$/)
             .transform(Number)
-            .pipe(z.number().int().min(1).max(200))
+            .pipe(z.number().int().min(1).max(1000))
             .optional(),
     })
     .refine(

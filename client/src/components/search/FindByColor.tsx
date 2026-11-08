@@ -19,7 +19,8 @@ const START_COLOR: Hsl = { h: 204, s: 47, l: 67 };
 const START_HUE: HueRange = { from: 200, to: 260 };
 const FULL_LIGHT: LightRange = { from: 0, to: 100 };
 
-type Mode = 'swatches' | 'hex' | 'hsl' | 'range';
+export type ColorSearchMode = 'swatches' | 'hex' | 'hsl' | 'range';
+type Mode = ColorSearchMode;
 
 const MODES: [Mode, string][] = [
     ['swatches', 'Swatches'],
@@ -27,6 +28,8 @@ const MODES: [Mode, string][] = [
     ['hsl', 'HSL'],
     ['range', 'Range'],
 ];
+
+const ALL_MODES = MODES.map(([value]) => value);
 
 /** A ranged search: either part can be left out */
 interface ColorRanges {
@@ -69,6 +72,8 @@ interface FindByColorProps {
     onClear: () => void;
     /** How many songs the current color search found, once it has loaded */
     count?: number;
+    /** The ways of searching on offer, in order (all of them by default) */
+    modes?: Mode[];
 }
 
 /**
@@ -86,8 +91,12 @@ const FindByColor = ({
     onRange,
     onClear,
     count,
+    modes = ALL_MODES,
 }: FindByColorProps) => {
-    const [mode, setMode] = useState<Mode>(color ? 'hex' : hue || light ? 'range' : 'swatches');
+    const [mode, setMode] = useState<Mode>(() => {
+        const wanted = color ? 'hex' : hue || light ? 'range' : 'swatches';
+        return modes.includes(wanted) ? wanted : modes[0];
+    });
     // The color being dialed in; the search follows it
     const [draft, setDraft] = useState<Hsl>(() => (color ? hexToHsl(color) : START_COLOR));
     const [hexText, setHexText] = useState(() => color ?? hslToHex(START_COLOR));
@@ -227,19 +236,21 @@ const FindByColor = ({
             >
                 Find by color
             </SectionLabel>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Search by">
-                {MODES.map(([value, label]) => (
-                    <button
-                        key={value}
-                        type="button"
-                        className={toggleKeyClass(mode === value)}
-                        aria-pressed={mode === value}
-                        onClick={() => changeMode(value)}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
+            {modes.length > 1 && (
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Search by">
+                    {MODES.filter(([value]) => modes.includes(value)).map(([value, label]) => (
+                        <button
+                            key={value}
+                            type="button"
+                            className={toggleKeyClass(mode === value)}
+                            aria-pressed={mode === value}
+                            onClick={() => changeMode(value)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {mode === 'swatches' && (
                 <div

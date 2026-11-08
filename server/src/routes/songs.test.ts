@@ -373,13 +373,15 @@ describe('GET /api/songs', () => {
         await putSong(song, 'c');
 
         expect((await api.get('/api/songs').query({ limit: '2' })).body).toHaveLength(2);
+        // The Songs page asks for the whole library
+        expect((await api.get('/api/songs').query({ limit: '1000' })).body).toHaveLength(3);
     });
 
     it.each([
         ['a decade not ending in 0', { decade: '1995' }],
         ['a decade that is not a number', { decade: 'abcd' }],
         ['a limit of 0', { limit: '0' }],
-        ['a limit over 200', { limit: '201' }],
+        ['a limit over 1000', { limit: '1001' }],
         ['a limit that is not a number', { limit: 'ten' }],
         ['a color that is not a hex', { color: 'red' }],
         ['an unknown family', { family: 'teal' }],
