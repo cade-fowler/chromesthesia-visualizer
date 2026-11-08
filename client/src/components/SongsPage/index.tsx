@@ -3,7 +3,7 @@ import type { LibraryStats, SongSummary } from '@chromesthesia/shared';
 import { getStats } from '../databaseAPI';
 import SectionLabel from '../ui/SectionLabel';
 import SongCard from '../ui/SongCard';
-import { toggleKeyClass } from '../ui/buttons';
+import { smallKeyClass, toggleKeyClass } from '../ui/buttons';
 import SearchFilters from '../search/SearchFilters';
 import { useSongSearch } from '../search/useSongSearch';
 import { hasFilters } from '../../utils/songSearch';
@@ -24,7 +24,7 @@ const rangeNote = (song: SongSummary) =>
  */
 const SongsPage = () => {
     const songSearch = useSongSearch({ always: true, limit: LIMIT });
-    const { search, update, found, current, error } = songSearch;
+    const { search, update, reset, found, current, error } = songSearch;
     const [stats, setStats] = useState<LibraryStats | null>(null);
 
     useEffect(() => {
@@ -59,6 +59,18 @@ const SongsPage = () => {
                 aria-label="Filters"
                 className="flex shrink-0 flex-col gap-6 p-5 sm:p-7 lg:h-full lg:w-[380px] lg:overflow-y-auto lg:border-r lg:border-edge lg:p-7"
             >
+                <div className="-mb-2 flex items-center justify-between gap-3">
+                    <h2 className="text-[11px] silk">Filters</h2>
+                    {/* Always there, so the panels don't jump when it would appear */}
+                    <button
+                        type="button"
+                        className={smallKeyClass}
+                        onClick={reset}
+                        disabled={!filtered && !search.sort}
+                    >
+                        Reset all
+                    </button>
+                </div>
                 <SearchFilters songSearch={songSearch} decades={stats?.decades ?? []} />
             </aside>
             <section
@@ -68,21 +80,28 @@ const SongsPage = () => {
                 <SectionLabel aside={count}>
                     {filtered ? 'Matching songs' : 'All songs'}
                 </SectionLabel>
-                <div className="flex flex-wrap gap-2" role="group" aria-label="Sort by">
-                    {sortsFor(search).map((value) => (
-                        <button
-                            key={value}
-                            type="button"
-                            className={toggleKeyClass(sort === value)}
-                            aria-pressed={sort === value}
-                            // The default sort stays out of the URL
-                            onClick={() =>
-                                update({ sort: value === sortsFor(search)[0] ? undefined : value })
-                            }
-                        >
-                            {SORT_LABELS[value]}
-                        </button>
-                    ))}
+                <div className="flex flex-wrap items-center gap-2">
+                    <span id="sort-label" className="mr-1 text-[10px] silk">
+                        Sort by
+                    </span>
+                    <div className="flex flex-wrap gap-2" role="group" aria-labelledby="sort-label">
+                        {sortsFor(search).map((value) => (
+                            <button
+                                key={value}
+                                type="button"
+                                className={toggleKeyClass(sort === value)}
+                                aria-pressed={sort === value}
+                                // The default sort stays out of the URL
+                                onClick={() =>
+                                    update({
+                                        sort: value === sortsFor(search)[0] ? undefined : value,
+                                    })
+                                }
+                            >
+                                {SORT_LABELS[value]}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 {error ? (
                     <p className="text-sm font-bold text-danger" role="alert">

@@ -43,6 +43,20 @@ export const useSongSearch = ({ always = false, limit }: Options) => {
     const update = (changes: SearchChanges, replace = false) =>
         setParams((prev) => writeSearch(prev, changes), { replace });
 
+    /** Clears every filter and the sort */
+    const reset = () => {
+        setText('');
+        update({
+            q: undefined,
+            decade: undefined,
+            color: undefined,
+            family: undefined,
+            hue: undefined,
+            light: undefined,
+            sort: undefined,
+        });
+    };
+
     // Search once typing pauses
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -86,6 +100,7 @@ export const useSongSearch = ({ always = false, limit }: Options) => {
         text,
         setText,
         update,
+        reset,
         enabled,
         /** The latest songs loaded, which may be for an earlier search while the next loads */
         found,

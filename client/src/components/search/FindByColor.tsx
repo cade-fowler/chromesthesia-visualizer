@@ -254,7 +254,7 @@ const FindByColor = ({
 
             {mode === 'swatches' && (
                 <div
-                    className="grid grid-cols-4 gap-x-3 gap-y-3 sm:grid-cols-8"
+                    className="grid grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] gap-3"
                     role="group"
                     aria-label="Color families"
                 >
