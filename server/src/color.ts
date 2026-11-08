@@ -1,4 +1,10 @@
-import type { ColorFamily, HexColor, HueRange, LightRange } from '@chromesthesia/shared';
+import type {
+    ColorFamily,
+    ColorShade,
+    HexColor,
+    HueRange,
+    LightRange,
+} from '@chromesthesia/shared';
 
 /**
  * Color math for search by color. Colors are compared in OKLab, a perceptual color space:
@@ -154,6 +160,22 @@ export const familyOf = (hex: HexColor): ColorFamily => {
         if (h >= band.from) family = band.family;
     }
     return h >= HUE_BANDS[0].from ? HUE_BANDS[0].family : family;
+};
+
+/**
+ * How light a color is within its family, for the Studio's color prompts: pale, mid or deep,
+ * judged against the family's swatch color, since a mid yellow is far lighter than a mid blue.
+ * Pale starts 40% of the way from the swatch's lightness to white; deep starts 40% of the way
+ * down to BLACK_LIGHTNESS. White and black have no shade (null).
+ */
+export const shadeOf = (hex: HexColor): ColorShade | null => {
+    const family = familyOf(hex);
+    if (family === 'white' || family === 'black') return null;
+    const { L } = hexToOkLch(hex);
+    const swatch = hexToOkLch(FAMILY_COLORS[family]).L;
+    if (L >= swatch + 0.4 * (1 - swatch)) return 'pale';
+    if (L <= swatch - 0.4 * (swatch - BLACK_LIGHTNESS)) return 'deep';
+    return 'mid';
 };
 
 /** A range search: a hue range, a lightness range, or both. */
