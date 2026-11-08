@@ -5,6 +5,7 @@ import songs from './routes/songs.js';
 import colors from './routes/colors.js';
 import stats from './routes/stats.js';
 import albums from './routes/albums.js';
+import settings from './routes/settings.js';
 import { authRouter } from './routes/auth.js';
 import type { AuthConfig } from './auth.js';
 import { securityHeaders } from './security.js';
@@ -31,6 +32,7 @@ export function createApp(auth: AuthConfig, { clientDir }: AppOptions = {}) {
     app.use('/api/colors', colors);
     app.use('/api/stats', stats);
     app.use('/api/albums', albums);
+    app.use('/api/settings', settings);
 
     // Unknown API routes
     app.use('/api', (_req, res) => {

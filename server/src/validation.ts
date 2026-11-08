@@ -3,6 +3,7 @@ import type {
     AddColorRequest,
     ColorFamily,
     LoginRequest,
+    UpdateSettingsRequest,
     UpdateColorRequest,
     UpsertSongRequest,
 } from '@chromesthesia/shared';
@@ -156,3 +157,14 @@ export const randomQuerySchema = z.object({
 export const loginSchema = z.object({
     password: z.string().min(1).max(1024),
 }) satisfies z.ZodType<LoginRequest>;
+
+// At least one setting; unknown keys are rejected so a typo doesn't silently do nothing
+export const updateSettingsSchema = z
+    .strictObject({
+        dailyGoal: z.number().int().min(1).max(100),
+    })
+    .partial()
+    .refine(
+        (body) => Object.keys(body).length > 0,
+        'Send at least one setting',
+    ) satisfies z.ZodType<UpdateSettingsRequest>;

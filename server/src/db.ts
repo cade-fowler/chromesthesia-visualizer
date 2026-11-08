@@ -1,5 +1,5 @@
 import { MongoClient, type Db, type ObjectId } from 'mongodb';
-import type { ColorEntry, Song } from '@chromesthesia/shared';
+import type { ColorEntry, OwnerSettings, Song } from '@chromesthesia/shared';
 
 /** How a ColorEntry is stored: Mongo's _id is its id, and createdAt is a real Date. */
 export interface ColorDoc extends Omit<ColorEntry, 'id' | 'createdAt'> {
@@ -7,6 +7,11 @@ export interface ColorDoc extends Omit<ColorEntry, 'id' | 'createdAt'> {
     createdAt: Date;
     /** Set on entries created by the split-colors migration (never exposed by the API) */
     migratedAt?: Date;
+}
+
+/** The owner's settings: one document, with _id 'owner'. */
+export interface SettingsDoc extends Partial<OwnerSettings> {
+    _id: 'owner';
 }
 
 let client: MongoClient | undefined;
@@ -32,6 +37,7 @@ function getDb(): Db {
 
 export const songs = () => getDb().collection<Song>('songs');
 export const colors = () => getDb().collection<ColorDoc>('colors');
+export const settings = () => getDb().collection<SettingsDoc>('settings');
 
 /**
  * Sort for a song's colors in song order: by where the part starts, then by when it was saved.

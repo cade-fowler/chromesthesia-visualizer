@@ -2,17 +2,20 @@ import type {
     AddColorRequest,
     AlbumWithSongs,
     AuthStatus,
+    CollectionProgress,
     ColorEntry,
     HueChartColor,
     LibraryStats,
     ListSongsQuery,
     LoginRequest,
     NowPlaying,
+    OwnerSettings,
     SimilarSong,
     Song,
     SongSummary,
     SongWithColors,
     UpdateColorRequest,
+    UpdateSettingsRequest,
     UpsertSongRequest,
 } from '@chromesthesia/shared';
 import { formatRange } from '../utils/colorRange';
@@ -78,6 +81,27 @@ export const getStats = async (): Promise<LibraryStats> => {
 export const getHueChart = async (): Promise<HueChartColor[]> => {
     const response = await fetch('/api/stats/hues');
     if (!response.ok) throw await errorFrom(response, 'Loading colors');
+    return response.json();
+};
+
+/** The owner's progress and coverage, for the Studio's Logbook. Needs the owner login. */
+export const getProgress = async (): Promise<CollectionProgress> => {
+    const response = await fetch('/api/stats/progress');
+    if (!response.ok) throw await errorFrom(response, 'Loading progress');
+    return response.json();
+};
+
+/** The owner's settings, such as the daily goal. Needs the owner login. */
+export const getSettings = async (): Promise<OwnerSettings> => {
+    const response = await fetch('/api/settings');
+    if (!response.ok) throw await errorFrom(response, 'Loading settings');
+    return response.json();
+};
+
+/** Changes the given settings and resolves all of them. Needs the owner login. */
+export const updateSettings = async (patch: UpdateSettingsRequest): Promise<OwnerSettings> => {
+    const response = await sendJson('/api/settings', 'PATCH', patch);
+    if (!response.ok) throw await errorFrom(response, 'Saving settings');
     return response.json();
 };
 

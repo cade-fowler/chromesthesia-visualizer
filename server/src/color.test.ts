@@ -8,6 +8,7 @@ import {
     inColorRange,
     inHueRange,
     rangeCenterDistance,
+    shadeOf,
     songDistance,
 } from './color.js';
 
@@ -38,6 +39,26 @@ describe('hexToOkLch', () => {
 
     it('gives pure red its OKLCH hue of about 29°', () => {
         expect(hexToOkLch('#ff0000').h).toBeCloseTo(29.2, 0);
+    });
+});
+
+describe('shadeOf', () => {
+    it.each([
+        ['#ffcccc', 'pale'],
+        ['#ff0000', 'mid'],
+        ['#800000', 'deep'],
+        ['#add8e6', 'pale'],
+        ['#000080', 'deep'],
+        ['#fff5b0', 'pale'],
+        ['#f2d02e', 'mid'], // the yellow swatch: mid, though it's lighter than any mid blue
+        ['#006400', 'deep'],
+    ])('%s is %s', (hex, shade) => {
+        expect(shadeOf(hex)).toBe(shade);
+    });
+
+    it('gives white and black no shade', () => {
+        expect(shadeOf('#ffffff')).toBeNull();
+        expect(shadeOf('#111111')).toBeNull();
     });
 });
 

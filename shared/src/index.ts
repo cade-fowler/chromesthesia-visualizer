@@ -223,6 +223,44 @@ export interface HueChartColor {
     lightness: number;
 }
 
+/** How light a colorful color is within its family, for the Studio's color prompts. */
+export type ColorShade = 'pale' | 'mid' | 'deep';
+
+/**
+ * Response of GET /api/stats/progress (owner only): what the Studio's Logbook needs to show
+ * progress and suggest what to log next.
+ */
+export interface CollectionProgress {
+    songs: number;
+    colors: number;
+    /** Each song's first color time (ISO 8601) from the last 90 days, for days and the streak */
+    loggedAt: string[];
+    /**
+     * Songs with a color in each family and shade. White and black have no shade (null). A song
+     * counts in every bucket it has a color in.
+     */
+    colorBuckets: { family: ColorFamily; shade: ColorShade | null; songs: number }[];
+    /** Songs per family, with one color from each of up to 10 of them (newest songs first) */
+    families: { family: ColorFamily; songs: number; colors: HexColor[] }[];
+    /** Songs per decade, from the 1960s to now plus any older decade that has songs */
+    decades: { decade: number; songs: number }[];
+    /** Albums (not singles) with only one or two logged songs */
+    thinAlbums: { id: string; name: string; imageUrl?: string; songs: number }[];
+    /** Artists with exactly one logged song */
+    oneSongArtists: string[];
+    /** Songs with a single whole-song color and no parts */
+    oneColorSongs: { id: string; title: string; artists: string[] }[];
+}
+
+/** The owner's settings (GET and PATCH /api/settings, owner only). */
+export interface OwnerSettings {
+    /** Songs to log each day, 1–100 */
+    dailyGoal: number;
+}
+
+/** Body of PATCH /api/settings. */
+export type UpdateSettingsRequest = Partial<OwnerSettings>;
+
 /**
  * Body of PUT /api/songs/:id (the id comes from the URL). Leaving out notes, durationMs, album or
  * artistUrls keeps the song's current value, so saving from Spotify never wipes notes; send [] to clear them.

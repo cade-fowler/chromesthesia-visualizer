@@ -4,6 +4,7 @@ import { useOwner } from '../../../auth/OwnerContext';
 import SongSource from './SongSource';
 import SongNotes from './SongNotes';
 import DeleteSong from './DeleteSong';
+import Logbook from './Logbook';
 import SpotifyNowPlaying from './SpotifyNowPlaying';
 import ColorSwatch from '../../ColorSwatch';
 import ColorEntryForm from './ColorEntryForm';
@@ -80,6 +81,9 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     const [notice, setNotice] = useState<{ text: string; id: number } | null>(null);
     // Bumped when a song is saved for the first time or deleted, so the song list loads again
     const [songListVersion, setSongListVersion] = useState(0);
+    // Bumped after every save or delete, so the Logbook's counts load again
+    const [logVersion, setLogVersion] = useState(0);
+    const bumpLog = () => setLogVersion((version) => version + 1);
     const exchangedCode = useRef(false);
 
     useEffect(() => {
@@ -206,6 +210,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             colors: prev?.songId === saved.songId ? insertInSongOrder(prev.colors, saved) : [saved],
         }));
         notify('Color added');
+        bumpLog();
         // The song's first color saved the song itself; load its record so notes can be added,
         // and have the song list pick it up
         if (!storedLoad?.song) {
@@ -250,6 +255,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
             setLoadedColors((prev) =>
                 prev ? { ...prev, colors: replaceInSongOrder(prev.colors, updated) } : prev,
             );
+            bumpLog();
         }
         stopEditing();
         notify('Changes saved');
@@ -258,6 +264,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
     // Throws on failure so the swatch or form can stay put and let you retry
     const handleDelete = async (id: string) => {
         await deleteColor(id);
+        bumpLog();
         setLoadedColors((prev) =>
             prev ? { ...prev, colors: prev.colors.filter((entry) => entry.id !== id) } : prev,
         );
@@ -276,6 +283,7 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
         setStored({ id: songId, song: null });
         setLoadedColors({ songId, colors: [] });
         setSongListVersion((version) => version + 1);
+        bumpLog();
         if (pickedId) pickSong(null);
         notify('Song deleted');
     };
@@ -445,6 +453,10 @@ const SpotifyElement = ({ color, onColorChange }: SpotifyElementProps) => {
                     onDelete={handleDeleteSong}
                 />
             )}
+            <Logbook
+                version={logVersion}
+                onMilestone={(songs) => notify(`Milestone · ${songs} songs`)}
+            />
             <div className="mt-2">
                 <Nameplate details={['Model CV-1', 'Color studio']} />
             </div>

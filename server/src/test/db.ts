@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { colors, connectDb, disconnectDb, songs } from '../db.js';
+import { colors, connectDb, disconnectDb, settings, songs } from '../db.js';
 
 /** Connects to a fresh in-memory MongoDB for this test file and empties it before each test. */
 export function useTestDb(): void {
@@ -19,5 +19,6 @@ export function useTestDb(): void {
     beforeEach(async () => {
         await songs().deleteMany({});
         await colors().deleteMany({});
+        await settings().deleteMany({});
     });
 }
